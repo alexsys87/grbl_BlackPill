@@ -1,0 +1,70 @@
+<UserControl
+    x:Class="GrblHost.Views.SettingsPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid Margin="0,0,6,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ui:TextBox Text="{Binding SettingsFilter, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="{DynamicResource S.SettingsFilter}" Icon="{ui:SymbolIcon Search24}" />
+            <ui:Button Grid.Column="1" Margin="6,0,0,0" Icon="{ui:SymbolIcon ArrowSync24}" Command="{Binding ReadSettingsCommand}"
+                       ToolTip="{DynamicResource S.ReadSettingsTip}" />
+            <ui:Button Grid.Column="2" Margin="6,0,0,0" Appearance="Primary" Icon="{ui:SymbolIcon Save24}"
+                       Content="{DynamicResource S.WriteSettings}" Command="{Binding WriteSettingsCommand}" />
+        </Grid>
+
+        <ListBox Grid.Row="1" Margin="0,0,6,0" ItemsSource="{Binding FilteredSettings}" HorizontalContentAlignment="Stretch"
+                 VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderThickness="0">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem" BasedOn="{StaticResource DefaultListBoxItemStyle}">
+                    <Setter Property="Padding" Value="6,3" />
+                    <Setter Property="Margin" Value="0,1" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="48" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="110" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Code}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource CommandTextBrush}" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                            <TextBlock Text="{Binding Name}" FontSize="12" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Unit}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                       Visibility="{Binding Unit, Converter={StaticResource NullToVisibility}}" />
+                        </StackPanel>
+                        <TextBox Grid.Column="2" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Padding="6,3"
+                                 FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsChanged}" Value="True">
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                            <Setter Property="Foreground" Value="{DynamicResource LogWarningBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <TextBlock Grid.Row="2" Margin="0,8,6,0" Style="{StaticResource Hint}" Text="{DynamicResource S.SettingsHint}" />
+    </Grid>
+</UserControl>
