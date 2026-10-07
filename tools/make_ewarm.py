@@ -75,6 +75,9 @@ def make_ewp(chip):
     t = set_option(t, 'GFPUDeviceSlave', ['%s\tST %s' % (name, name)])
     t = t.replace('Teacup_STM32F411_import_lib.o', 'grbl_%s_import_lib.o' % name)
     t = set_option(t, 'OOCOutputFile', ['grbl_%s.bin' % name])
+    # Raw binary next to the .out in both configurations (for dfu-util).
+    t = set_option(t, 'OOCOutputFormat', ['3'])
+    t = set_option(t, 'OOCObjCopyEnable', ['1'])
     # Plain char is unsigned, as in the ARM ABI and the GCC test build.
     t = set_option(t, 'CCSignedPlainChar', ['0'])
     # Optimization. grblHAL doesn't fit into 256 KB without: Debug medium,
@@ -86,6 +89,10 @@ def make_ewp(chip):
         c = set_option(c, 'CCOptLevel', [lvl])
         c = set_option(c, 'CCOptLevelSlave', [lvl])
         c = set_option(c, 'CCOptStrategy', [strat])
+        # Both projects live in ewarm/: separate output directories per chip.
+        cfg = 'Debug' if debug else 'Release'
+        for opt, sub in (('ExePath', 'Exe'), ('ObjPath', 'Obj'), ('ListPath', 'List')):
+            c = set_option(c, opt, ['%s\\%s\\%s' % (cfg, name, sub)])
         cfgs[i] = c
     t = '<configuration>'.join(cfgs)
     # The core needs malloc(): the heap is defined in the ICF file.

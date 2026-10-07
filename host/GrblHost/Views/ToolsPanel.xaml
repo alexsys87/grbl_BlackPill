@@ -1,0 +1,119 @@
+<UserControl
+    x:Class="GrblHost.Views.ToolsPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+        <StackPanel>
+            <!-- Macros -->
+            <ui:Card Style="{StaticResource PanelCard}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource S.Macros}" />
+                    <ItemsControl ItemsSource="{Binding Macros}" IsEnabled="{Binding IsOnline}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ui:Button Style="{StaticResource SmallButton}" Appearance="Secondary" Content="{Binding Name}"
+                                           ToolTip="{Binding Script}"
+                                           Command="{Binding DataContext.RunMacroCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                           CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Expander Header="{DynamicResource S.MacroEditor}" Margin="0,6,0,0">
+                        <StackPanel Margin="0,8,0,0">
+                            <ComboBox ItemsSource="{Binding Macros}" SelectedItem="{Binding SelectedMacro}" DisplayMemberPath="Name" />
+                            <StackPanel Visibility="{Binding SelectedMacro, Converter={StaticResource NullToVisibility}}">
+                                <ui:TextBox Margin="0,6,0,0" PlaceholderText="{DynamicResource S.MacroName}"
+                                            Text="{Binding SelectedMacro.Name, UpdateSourceTrigger=PropertyChanged}" />
+                                <ui:TextBox Margin="0,6,0,0" PlaceholderText="{DynamicResource S.MacroScript}" MinHeight="90"
+                                            AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="{StaticResource MonoFont}"
+                                            VerticalScrollBarVisibility="Auto"
+                                            Text="{Binding SelectedMacro.Script, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <WrapPanel Margin="0,6,0,0">
+                                <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon Add24}" Content="{DynamicResource S.Add}"
+                                           Command="{Binding AddMacroCommand}" />
+                                <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon Delete24}" Content="{DynamicResource S.Delete}"
+                                           Command="{Binding DeleteMacroCommand}" />
+                            </WrapPanel>
+                            <TextBlock Style="{StaticResource Hint}" Text="{DynamicResource S.MacrosHint}" />
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Controller queries -->
+            <ui:Card Style="{StaticResource PanelCard}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource S.ChecksTitle}" />
+                    <WrapPanel IsEnabled="{Binding IsOnline}">
+                        <ui:Button Style="{StaticResource SmallButton}" Content="{DynamicResource S.BuildInfo}"
+                                   Command="{Binding SendRawCommand}" CommandParameter="$I" ToolTip="$I" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="{DynamicResource S.ParserState}"
+                                   Command="{Binding SendRawCommand}" CommandParameter="$G" ToolTip="$G" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="{DynamicResource S.Offsets}"
+                                   Command="{Binding SendRawCommand}" CommandParameter="$#" ToolTip="$#" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="{DynamicResource S.StartupLines}"
+                                   Command="{Binding SendRawCommand}" CommandParameter="$N" ToolTip="$N" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="{DynamicResource S.Pinout}"
+                                   Command="{Binding SendRawCommand}" CommandParameter="$PINS" ToolTip="$PINS" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="{DynamicResource S.Help}"
+                                   Command="{Binding SendRawCommand}" CommandParameter="$HELP" ToolTip="$HELP" />
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Hint}" Text="{DynamicResource S.AnswersHint}" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Work offsets -->
+            <ui:Card Style="{StaticResource PanelCard}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource S.WcsTitle}" />
+                    <WrapPanel IsEnabled="{Binding CanControl}">
+                        <ui:Button Style="{StaticResource SmallButton}" Content="G54" Command="{Binding SendRawCommand}" CommandParameter="G54" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="G55" Command="{Binding SendRawCommand}" CommandParameter="G55" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="G56" Command="{Binding SendRawCommand}" CommandParameter="G56" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="G57" Command="{Binding SendRawCommand}" CommandParameter="G57" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="G58" Command="{Binding SendRawCommand}" CommandParameter="G58" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="G59" Command="{Binding SendRawCommand}" CommandParameter="G59" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="{DynamicResource S.ClearG92}"
+                                   Command="{Binding SendRawCommand}" CommandParameter="G92.1" ToolTip="G92.1" />
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Hint}" Text="{DynamicResource S.WcsHint}" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Connection -->
+            <ui:Card Style="{StaticResource PanelCard}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource S.ConnectionTitle}" />
+                    <CheckBox Content="{DynamicResource S.AutoReconnect}" IsChecked="{Binding AutoReconnect}" MinWidth="0" />
+                    <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{DynamicResource S.AutoReconnectHint}" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Firmware -->
+            <ui:Card Style="{StaticResource PanelCard}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource S.FirmwareTitle}" />
+                    <TextBlock Text="{Binding FirmwareName}" FontSize="12" Margin="0,0,0,6"
+                               Visibility="{Binding FirmwareName, Converter={StaticResource NullToVisibility}}" />
+                    <WrapPanel IsEnabled="{Binding CanControl}">
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon ArrowDownload24}" Content="{DynamicResource S.Dfu}"
+                                   Command="{Binding ConfirmRawCommand}" CommandParameter="$DFU" ToolTip="{DynamicResource S.DfuTip}" />
+                        <ui:Button Style="{StaticResource SmallButton}" Appearance="Caution" Content="{DynamicResource S.RestoreDefaults}"
+                                   Command="{Binding ConfirmRawCommand}" CommandParameter="$RST=$" ToolTip="$RST=$" />
+                        <ui:Button Style="{StaticResource SmallButton}" Appearance="Caution" Content="{DynamicResource S.ClearOffsets}"
+                                   Command="{Binding ConfirmRawCommand}" CommandParameter="$RST=#" ToolTip="$RST=#" />
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Hint}" Text="{DynamicResource S.FirmwareHint}" />
+                </StackPanel>
+            </ui:Card>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

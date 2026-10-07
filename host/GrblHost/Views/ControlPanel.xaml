@@ -1,0 +1,300 @@
+<UserControl
+    x:Class="GrblHost.Views.ControlPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <UserControl.Resources>
+        <Style x:Key="AxisName" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Width" Value="26" />
+        </Style>
+        <Style x:Key="Dro" TargetType="TextBlock" BasedOn="{StaticResource BigValue}">
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="DroSmall" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="10,0,8,0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+        </Style>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+        <StackPanel IsEnabled="{Binding IsOnline}">
+            <!-- Position (DRO) -->
+            <ui:Card Style="{StaticResource PanelCard}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,6">
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource S.PositionTitle}" Margin="0" />
+                        <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right" Style="{StaticResource Label}">
+                            <Run Text="{DynamicResource S.Pins}" />
+                            <Run Text="{Binding Pins, Mode=OneWay}" FontFamily="{StaticResource MonoFont}" />
+                        </TextBlock>
+                    </DockPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Column="1" Style="{StaticResource Label}" HorizontalAlignment="Right" Text="{DynamicResource S.Work}" />
+                        <TextBlock Grid.Column="2" Style="{StaticResource Label}" HorizontalAlignment="Right" Margin="10,0,8,0"
+                                   Text="{DynamicResource S.MachineCoords}" />
+
+                        <TextBlock Grid.Row="1" Style="{StaticResource AxisName}" Text="X" Foreground="#E53935" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource Dro}" Text="{Binding WPos.X, StringFormat={}{0:0.000}}" />
+                        <TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource DroSmall}" Text="{Binding MPos.X, StringFormat={}{0:0.000}}" />
+                        <ui:Button Grid.Row="1" Grid.Column="3" Margin="0,2" Padding="10,4" Content="X0" Command="{Binding ZeroCommand}"
+                                   CommandParameter="X" ToolTip="{DynamicResource S.ZeroTip}" />
+
+                        <TextBlock Grid.Row="2" Style="{StaticResource AxisName}" Text="Y" Foreground="#43A047" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource Dro}" Text="{Binding WPos.Y, StringFormat={}{0:0.000}}" />
+                        <TextBlock Grid.Row="2" Grid.Column="2" Style="{StaticResource DroSmall}" Text="{Binding MPos.Y, StringFormat={}{0:0.000}}" />
+                        <ui:Button Grid.Row="2" Grid.Column="3" Margin="0,2" Padding="10,4" Content="Y0" Command="{Binding ZeroCommand}"
+                                   CommandParameter="Y" ToolTip="{DynamicResource S.ZeroTip}" />
+
+                        <TextBlock Grid.Row="3" Style="{StaticResource AxisName}" Text="Z" Foreground="#1E88E5" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Style="{StaticResource Dro}" Text="{Binding WPos.Z, StringFormat={}{0:0.000}}" />
+                        <TextBlock Grid.Row="3" Grid.Column="2" Style="{StaticResource DroSmall}" Text="{Binding MPos.Z, StringFormat={}{0:0.000}}" />
+                        <ui:Button Grid.Row="3" Grid.Column="3" Margin="0,2" Padding="10,4" Content="Z0" Command="{Binding ZeroCommand}"
+                                   CommandParameter="Z" ToolTip="{DynamicResource S.ZeroTip}" />
+                    </Grid>
+                    <WrapPanel Margin="0,8,0,0">
+                        <ui:Button Style="{StaticResource SmallButton}" Content="{DynamicResource S.ZeroXY}" Command="{Binding ZeroCommand}"
+                                   CommandParameter="XY" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="{DynamicResource S.ZeroAll}" Command="{Binding ZeroCommand}"
+                                   CommandParameter="XYZ" />
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon Target24}" Content="{DynamicResource S.GoZeroXY}"
+                                   Command="{Binding GoToZeroCommand}" CommandParameter="XY" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="{DynamicResource S.GoZeroZ}"
+                                   Command="{Binding GoToZeroCommand}" CommandParameter="Z" />
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Hint}" Text="{Binding ParserState}" FontFamily="{StaticResource MonoFont}" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Jog -->
+            <ui:Card Style="{StaticResource PanelCard}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource S.Movement}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Style="{StaticResource Label}" Text="{DynamicResource S.StepMm}" Margin="0,0,8,0" />
+                        <ListBox ItemsSource="{Binding JogSteps}" SelectedItem="{Binding JogStep}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="Transparent"
+                                 BorderThickness="0">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" MinWidth="26" TextAlignment="Center" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+
+                    <Grid HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:Button Grid.Row="0" Grid.Column="0" Style="{StaticResource JogButton}" Content="↖"
+                                   Command="{Binding JogCommand}" CommandParameter="XY-+" />
+                        <ui:Button Grid.Row="0" Grid.Column="1" Style="{StaticResource JogButton}" Content="Y+"
+                                   Command="{Binding JogCommand}" CommandParameter="Y+" />
+                        <ui:Button Grid.Row="0" Grid.Column="2" Style="{StaticResource JogButton}" Content="↗"
+                                   Command="{Binding JogCommand}" CommandParameter="XY++" />
+                        <ui:Button Grid.Row="1" Grid.Column="0" Style="{StaticResource JogButton}" Content="X−"
+                                   Command="{Binding JogCommand}" CommandParameter="X-" />
+                        <ui:Button Grid.Row="1" Grid.Column="1" Style="{StaticResource JogButton}" Appearance="Caution"
+                                   Icon="{ui:SymbolIcon Stop24}" Command="{Binding JogCancelCommand}"
+                                   ToolTip="{DynamicResource S.JogCancelTip}" />
+                        <ui:Button Grid.Row="1" Grid.Column="2" Style="{StaticResource JogButton}" Content="X+"
+                                   Command="{Binding JogCommand}" CommandParameter="X+" />
+                        <ui:Button Grid.Row="2" Grid.Column="0" Style="{StaticResource JogButton}" Content="↙"
+                                   Command="{Binding JogCommand}" CommandParameter="XY--" />
+                        <ui:Button Grid.Row="2" Grid.Column="1" Style="{StaticResource JogButton}" Content="Y−"
+                                   Command="{Binding JogCommand}" CommandParameter="Y-" />
+                        <ui:Button Grid.Row="2" Grid.Column="2" Style="{StaticResource JogButton}" Content="↘"
+                                   Command="{Binding JogCommand}" CommandParameter="XY+-" />
+                        <ui:Button Grid.Row="0" Grid.Column="4" Style="{StaticResource JogButton}" Content="Z+"
+                                   Command="{Binding JogCommand}" CommandParameter="Z+" />
+                        <ui:Button Grid.Row="2" Grid.Column="4" Style="{StaticResource JogButton}" Content="Z−"
+                                   Command="{Binding JogCommand}" CommandParameter="Z-" />
+                    </Grid>
+
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource Label}" Text="{DynamicResource S.FeedXY}" Margin="0,0,6,0" />
+                        <ui:NumberBox Grid.Column="1" Value="{Binding JogFeedXY, Mode=TwoWay}" Minimum="10" Maximum="10000"
+                                      SmallChange="100" MaxDecimalPlaces="0" ClearButtonEnabled="False"
+                                      SpinButtonPlacementMode="Hidden" />
+                        <TextBlock Grid.Column="2" Style="{StaticResource Label}" Text="Z" Margin="10,0,6,0" />
+                        <ui:NumberBox Grid.Column="3" Value="{Binding JogFeedZ, Mode=TwoWay}" Minimum="10" Maximum="5000"
+                                      SmallChange="50" MaxDecimalPlaces="0" ClearButtonEnabled="False"
+                                      SpinButtonPlacementMode="Hidden" />
+                    </Grid>
+                    <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{DynamicResource S.JogHint}" />
+
+                    <WrapPanel Margin="0,8,0,0">
+                        <ui:Button Style="{StaticResource SmallButton}" Appearance="Primary" Icon="{ui:SymbolIcon Home24}"
+                                   Content="{DynamicResource S.Home}" Command="{Binding HomeCommand}" ToolTip="$H" />
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon LockOpen24}"
+                                   Content="{DynamicResource S.Unlock}" Command="{Binding UnlockCommand}" ToolTip="{DynamicResource S.UnlockTip}" />
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon WeatherMoon24}"
+                                   Content="{DynamicResource S.Sleep}" Command="{Binding SleepCommand}" ToolTip="$SLP" />
+                    </WrapPanel>
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Spindle and coolant -->
+            <ui:Card Style="{StaticResource PanelCard}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource S.SpindleTitle}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource Label}" Text="{DynamicResource S.Rpm}" Margin="0,0,6,0" />
+                        <ui:NumberBox Grid.Column="1" Value="{Binding SpindleRpm, Mode=TwoWay}" Minimum="0" Maximum="100000"
+                                      SmallChange="500" MaxDecimalPlaces="0" ClearButtonEnabled="False"
+                                      SpinButtonPlacementMode="Compact" />
+                    </Grid>
+                    <WrapPanel Margin="0,8,0,0">
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon ArrowClockwise24}" Content="M3"
+                                   Command="{Binding SpindleCwCommand}" ToolTip="{DynamicResource S.SpindleCwTip}" />
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon ArrowCounterclockwise24}" Content="M4"
+                                   Command="{Binding SpindleCcwCommand}" ToolTip="{DynamicResource S.SpindleCcwTip}" />
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon Stop24}" Content="M5"
+                                   Command="{Binding SpindleOffCommand}" ToolTip="{DynamicResource S.SpindleOffTip}" />
+                    </WrapPanel>
+                    <WrapPanel>
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon Drop24}" Content="{DynamicResource S.Flood}"
+                                   Command="{Binding FloodCommand}" ToolTip="M8" />
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon WeatherFog24}" Content="{DynamicResource S.Mist}"
+                                   Command="{Binding MistCommand}" ToolTip="M7" />
+                        <ui:Button Style="{StaticResource SmallButton}" Content="M9" Command="{Binding CoolantOffCommand}"
+                                   ToolTip="{DynamicResource S.CoolantOffTip}" />
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Hint}">
+                        <Run Text="{DynamicResource S.SpindleNow}" />
+                        <Run Text="{Binding SpindleActual, StringFormat={}{0:0}, Mode=OneWay}" FontWeight="SemiBold" />
+                    </TextBlock>
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Overrides -->
+            <ui:Card Style="{StaticResource PanelCard}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource S.Overrides}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="52" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Style="{StaticResource Label}" Text="{DynamicResource S.OvFeed}" />
+                        <TextBlock Grid.Column="1" Style="{StaticResource Label}" FontWeight="SemiBold"
+                                   Text="{Binding FeedOverride, StringFormat={}{0}%}" />
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,2">
+                            <ui:Button Padding="8,4" Content="−10" Command="{Binding OverrideCommand}" CommandParameter="F-10" />
+                            <ui:Button Padding="8,4" Margin="4,0,0,0" Content="−1" Command="{Binding OverrideCommand}" CommandParameter="F-1" />
+                            <ui:Button Padding="8,4" Margin="4,0,0,0" Content="100%" Command="{Binding OverrideCommand}" CommandParameter="F0" />
+                            <ui:Button Padding="8,4" Margin="4,0,0,0" Content="+1" Command="{Binding OverrideCommand}" CommandParameter="F+1" />
+                            <ui:Button Padding="8,4" Margin="4,0,0,0" Content="+10" Command="{Binding OverrideCommand}" CommandParameter="F+10" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="1" Style="{StaticResource Label}" Text="{DynamicResource S.OvRapid}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource Label}" FontWeight="SemiBold"
+                                   Text="{Binding RapidOverride, StringFormat={}{0}%}" />
+                        <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Margin="0,2">
+                            <ui:Button Padding="8,4" Content="25%" Command="{Binding OverrideCommand}" CommandParameter="R25" />
+                            <ui:Button Padding="8,4" Margin="4,0,0,0" Content="50%" Command="{Binding OverrideCommand}" CommandParameter="R50" />
+                            <ui:Button Padding="8,4" Margin="4,0,0,0" Content="100%" Command="{Binding OverrideCommand}" CommandParameter="R100" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2" Style="{StaticResource Label}" Text="{DynamicResource S.OvSpindle}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource Label}" FontWeight="SemiBold"
+                                   Text="{Binding SpindleOverride, StringFormat={}{0}%}" />
+                        <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Margin="0,2">
+                            <ui:Button Padding="8,4" Content="−10" Command="{Binding OverrideCommand}" CommandParameter="S-10" />
+                            <ui:Button Padding="8,4" Margin="4,0,0,0" Content="−1" Command="{Binding OverrideCommand}" CommandParameter="S-1" />
+                            <ui:Button Padding="8,4" Margin="4,0,0,0" Content="100%" Command="{Binding OverrideCommand}" CommandParameter="S0" />
+                            <ui:Button Padding="8,4" Margin="4,0,0,0" Content="+1" Command="{Binding OverrideCommand}" CommandParameter="S+1" />
+                            <ui:Button Padding="8,4" Margin="4,0,0,0" Content="+10" Command="{Binding OverrideCommand}" CommandParameter="S+10" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{DynamicResource S.OverridesHint}" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Z probe -->
+            <ui:Card Style="{StaticResource PanelCard}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource S.ProbeTitle}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,4,0">
+                            <TextBlock Style="{StaticResource Label}" Text="{DynamicResource S.PlateMm}" />
+                            <ui:NumberBox Value="{Binding ProbePlate, Mode=TwoWay}" Minimum="0" Maximum="100" MaxDecimalPlaces="2"
+                                          SmallChange="0.1" ClearButtonEnabled="False" SpinButtonPlacementMode="Hidden" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="4,0">
+                            <TextBlock Style="{StaticResource Label}" Text="{DynamicResource S.ProbeDistance}" />
+                            <ui:NumberBox Value="{Binding ProbeDistance, Mode=TwoWay}" Minimum="1" Maximum="100" MaxDecimalPlaces="1"
+                                          SmallChange="1" ClearButtonEnabled="False" SpinButtonPlacementMode="Hidden" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="4,0,0,0">
+                            <TextBlock Style="{StaticResource Label}" Text="{DynamicResource S.ProbeFeed}" />
+                            <ui:NumberBox Value="{Binding ProbeFeed, Mode=TwoWay}" Minimum="5" Maximum="1000" MaxDecimalPlaces="0"
+                                          SmallChange="10" ClearButtonEnabled="False" SpinButtonPlacementMode="Hidden" />
+                        </StackPanel>
+                    </Grid>
+                    <ui:Button Margin="0,8,0,0" Icon="{ui:SymbolIcon ArrowDownload24}" Content="{DynamicResource S.ProbeZ}"
+                               Command="{Binding ProbeZCommand}" />
+                    <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{Binding ProbeText}"
+                               Visibility="{Binding ProbeText, Converter={StaticResource NullToVisibility}}" />
+                    <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{DynamicResource S.ProbeHint}" />
+                </StackPanel>
+            </ui:Card>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
