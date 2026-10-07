@@ -1,0 +1,14 @@
+# GCC cross-check builds
+test/gcc/build_*/
+# IAR EWARM output and per-user files
+ewarm/Debug/
+ewarm/Release/
+ewarm/settings/
+ewarm/*.dep
+ewarm/*.ewt
+# Host (.NET)
+host/**/bin/
+host/**/obj/
+host/.vs/
+*.user
+__pycache__/
