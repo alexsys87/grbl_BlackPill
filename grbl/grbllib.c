@@ -564,7 +564,8 @@ void task_execute (bool wait)
     }
 
     uint32_t now = hal.get_elapsed_ticks();
-    if(!(now == last_ms || tasks.delayed == tasks.systick)) {
+    core_task_t *delayed = tasks.delayed;   // One volatile read per statement.
+    if(!(now == last_ms || delayed == tasks.systick)) {
 
         last_ms = now;
 

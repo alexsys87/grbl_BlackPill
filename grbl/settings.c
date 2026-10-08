@@ -2958,13 +2958,18 @@ FLASHMEM static tool_table_entry_t *settings_get_tool_data (tool_id_t tool_id)
 {
     static tool_table_entry_t tool = {0};
 
-    if(tool_id <= MAX_TOOL_NUMBER) {
+    // tool_id_t (int32_t) can't exceed the default MAX_TOOL_NUMBER, the check
+    // is needed only for a lower configured maximum.
+#if MAX_TOOL_NUMBER < INT32_MAX
+    if(tool_id > MAX_TOOL_NUMBER) {
+        tool.data = NULL;
+        tool.pocket = (pocket_id_t)-1;
+    } else
+#endif
+    {
         tool_data.tool_id = tool_id;
         tool.pocket = (pocket_id_t)tool_id;
         tool.data = &tool_data;
-    } else {
-        tool.data = NULL;
-        tool.pocket = (pocket_id_t)-1;
     }
 
     return &tool;
