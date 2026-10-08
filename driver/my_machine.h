@@ -28,6 +28,25 @@
 #define USB_SERIAL_CDC          1
 #endif
 
+// Serial ports in parallel with the host port, e.g. for a WiFi module
+// (ESP-01 / ESP8266 with esp-link or ESP3D, ESP32 serial bridge) or a
+// Bluetooth module (HC-05), 8N1:
+//   UART1_ENABLE  USART1 on PA9 (TX) / PA10 (RX). Only with USB_SERIAL_CDC
+//                 = 1, otherwise USART1 is the host port anyway.
+//   UART2_ENABLE  USART2 on PA2 (TX) / PA3 (RX).
+// Input comes from one port at a time: another port takes over when it
+// sends while the machine stands still. Real time commands (?, !, ~,
+// Ctrl-X) work from every port, status reports and alarms go to all.
+// See driver/stream_mux.c.
+#ifndef UART1_ENABLE
+#define UART1_ENABLE            1
+#endif
+#ifndef UART2_ENABLE
+#define UART2_ENABLE            1
+#endif
+#define UART1_BAUD_RATE         115200
+#define UART2_BAUD_RATE         115200
+
 // Settings are stored in flash sector 1 (16 KB at 0x08004000), see the
 // linker files in cmsis/linker and test/gcc (FLASH_ENABLE is set by the
 // core when no I2C EEPROM is configured).

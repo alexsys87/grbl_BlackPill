@@ -10,7 +10,8 @@
   (at your option) any later version.
 
   Pin assignments (based on the grblHAL "BlackPill" map, the ganged / 4th
-  axis motor is dropped, USART1 and coolant moved off the 32 kHz crystal):
+  axis motor is dropped, USART1 and coolant moved off the 32 kHz crystal,
+  Y step / dir on PA6 / PA7 to free PA2 / PA3 for USART2):
 
                                  -----------
                              VB |           | +3V
@@ -20,14 +21,14 @@
                             RST |      |K|  | B8   Cycle start
                   X step     A0 |       -   | B7   Feed hold
                   X dir      A1 |           | B6   Reset / E-stop
-                  Y step     A2 |           | B5   Coolant mist (M7)
-                  Y dir      A3 |    / \    | B4   Coolant flood (M8)
+          USART2 TX (WiFi)   A2 |           | B5   Coolant mist (M7)
+          USART2 RX (WiFi)   A3 |    / \    | B4   Coolant flood (M8)
                   Z step     A4 |   <MCU>   | B3
                   Z dir      A5 |    \ /    | A15
-                             A6 |           | A12  USB D+
-                             A7 |   -   -   | A11  USB D-
-       Stepper enable (EN)   B0 |  |R| |B|  | A10  USART1 RX (option)
-       Spindle enable        B1 |   -   -   | A9   USART1 TX (option)
+                  Y step     A6 |           | A12  USB D+
+                  Y dir      A7 |   -   -   | A11  USB D-
+       Stepper enable (EN)   B0 |  |R| |B|  | A10  USART1 RX (WiFi / BT)
+       Spindle enable        B1 |   -   -   | A9   USART1 TX (WiFi / BT)
        Spindle direction     B2 |           | A8   Spindle PWM (TIM1_CH1)
                             B10 |           | B15  Probe
                             +3V |   -----   | B14  Z limit
@@ -41,6 +42,8 @@
   - Step / dir / enable outputs are 3.3 V push-pull. Most 3018 driver
     boards (A4988, DRV8825, TMC2208) accept 3.3 V logic.
   - PB2 is BOOT1, it may be used as an output after reset.
+  - USART1 / USART2 are 3.3 V (ESP-01, ESP32, HC-05 connect directly):
+    module TX to the RX pin, module RX to the TX pin, common GND.
 */
 
 #if N_ABC_MOTORS > 0
@@ -53,14 +56,14 @@
 // Step pulse outputs, GPIOA.
 #define STEP_PORT               GPIOA
 #define X_STEP_PIN              0
-#define Y_STEP_PIN              2
+#define Y_STEP_PIN              6
 #define Z_STEP_PIN              4
 #define STEP_OUTMODE            GPIO_MAP
 
 // Direction outputs, GPIOA.
 #define DIRECTION_PORT          GPIOA
 #define X_DIRECTION_PIN         1
-#define Y_DIRECTION_PIN         3
+#define Y_DIRECTION_PIN         7
 #define Z_DIRECTION_PIN         5
 #define DIRECTION_OUTMODE       GPIO_MAP
 
@@ -146,10 +149,15 @@
 #define SAFETY_DOOR_PIN         AUXINPUT0_PIN
 #endif
 
-// USART1 (used when USB_SERIAL_CDC is 0).
-#define UART_PORT               GPIOA
-#define UART_TX_PIN             9
-#define UART_RX_PIN             10
+// USART1: the host port without USB, else a port in parallel with USB.
+#define UART1_PORT              GPIOA
+#define UART1_TX_PIN            9
+#define UART1_RX_PIN            10
+
+// USART2: a port in parallel with the host port (e.g. a WiFi module).
+#define UART2_PORT              GPIOA
+#define UART2_TX_PIN            2
+#define UART2_RX_PIN            3
 
 // Status LED of the Black Pill (active low): on while the controller runs.
 #define LED_PORT                GPIOC

@@ -44,6 +44,7 @@
 #include "grbl/protocol.h"
 #include "grbl/report.h"
 #include "grbl/system.h"
+#include "grbl/nvs_buffer.h"
 
 #if (LIMIT_MASK|CONTROL_MASK|DEVICES_IRQ_MASK) != (LIMIT_MASK_SUM+CONTROL_MASK_SUM+DEVICES_IRQ_MASK_SUM)
 #error Interrupt enabled input pins must have unique pin numbers!
@@ -397,6 +398,60 @@ ISR_CODE static void stepperPulseStartDelayed (stepper_t *stepper)
 /*  Limits, control, probe                                                 */
 /* ---------------------------------------------------------------------- */
 
+/*
+  Driver settings, stored in their own NVS block.
+
+  $450 - limit switches fitted, axis mask. Inputs of axes without switches
+  are ignored: no interrupt, never reported as triggered, so they need no
+  jumpers whatever $5 (invert) says.
+*/
+typedef struct {
+    axes_signals_t limits_fitted;
+} driver_settings_t;
+
+static driver_settings_t driver_settings;
+static nvs_address_t nvs_address;
+
+static void on_settings_changed (settings_t *settings, settings_changed_flags_t changed);
+
+PROGMEM static const setting_detail_t driver_setting_detail[] = {
+    { Setting_UserDefined_0, Group_Limits, "Limit switches fitted", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_NonCore, &driver_settings.limits_fitted.mask, NULL, NULL },
+};
+
+PROGMEM static const setting_descr_t driver_setting_descr[] = {
+    { Setting_UserDefined_0, "Axes with limit switches. The inputs of the other axes are ignored and need no jumpers." },
+};
+
+static void driver_settings_save (void)
+{
+    hal.nvs.memcpy_to_nvs(nvs_address, (uint8_t *)&driver_settings, sizeof(driver_settings_t), true);
+}
+
+static void driver_settings_restore (void)
+{
+    driver_settings.limits_fitted.mask = DEFAULT_LIMIT_SWITCHES_FITTED & AXES_BITMASK;
+    driver_settings_save();
+}
+
+static void driver_settings_load (void)
+{
+    if(hal.nvs.memcpy_from_nvs((uint8_t *)&driver_settings, nvs_address, sizeof(driver_settings_t), true) != NVS_TransferResult_OK)
+        driver_settings_restore();
+
+    driver_settings.limits_fitted.mask &= AXES_BITMASK;
+}
+
+static setting_details_t driver_setting_details = {
+    .settings = driver_setting_detail,
+    .n_settings = sizeof(driver_setting_detail) / sizeof(setting_detail_t),
+    .descriptions = driver_setting_descr,
+    .n_descriptions = sizeof(driver_setting_descr) / sizeof(setting_descr_t),
+    .on_changed = on_settings_changed,
+    .save = driver_settings_save,
+    .load = driver_settings_load,
+    .restore = driver_settings_restore
+};
+
 // Enable/disable limit pins interrupt
 static void limitsEnable (bool on, axes_signals_t homing_cycle)
 {
@@ -427,6 +482,9 @@ static limit_signals_t limitsGetState (void)
 
     if(settings.limits.invert.mask)
         signals.min.value ^= settings.limits.invert.mask;
+
+    signals.min.mask &= driver_settings.limits_fitted.mask;     // No switch, never triggered.
+    signals.min.value &= driver_settings.limits_fitted.mask;
 
     return signals;
 }
@@ -749,19 +807,21 @@ static void on_settings_changed (settings_t *settings, settings_changed_flags_t 
 
             switch(input->id) {
 
+                // Inputs of axes without a switch ($450) keep the pull-up
+                // (no floating pin) but raise no interrupt.
                 case Input_LimitX:
                     input->mode.pull_mode = settings->limits.disable_pullup.x ? PullMode_None : PullMode_Up;
-                    input->mode.irq_mode = limit_fei.x ? IRQ_Mode_Falling : IRQ_Mode_Rising;
+                    input->mode.irq_mode = !driver_settings.limits_fitted.x ? IRQ_Mode_None : limit_fei.x ? IRQ_Mode_Falling : IRQ_Mode_Rising;
                     break;
 
                 case Input_LimitY:
                     input->mode.pull_mode = settings->limits.disable_pullup.y ? PullMode_None : PullMode_Up;
-                    input->mode.irq_mode = limit_fei.y ? IRQ_Mode_Falling : IRQ_Mode_Rising;
+                    input->mode.irq_mode = !driver_settings.limits_fitted.y ? IRQ_Mode_None : limit_fei.y ? IRQ_Mode_Falling : IRQ_Mode_Rising;
                     break;
 
                 case Input_LimitZ:
                     input->mode.pull_mode = settings->limits.disable_pullup.z ? PullMode_None : PullMode_Up;
-                    input->mode.irq_mode = limit_fei.z ? IRQ_Mode_Falling : IRQ_Mode_Rising;
+                    input->mode.irq_mode = !driver_settings.limits_fitted.z ? IRQ_Mode_None : limit_fei.z ? IRQ_Mode_Falling : IRQ_Mode_Rising;
                     break;
 
                 default:
@@ -1048,11 +1108,31 @@ bool driver_init (void)
         .commands = boot_command_list
     };
 
-    stream_connect(usbInit());
+    // USB is the host port, the enabled UARTs work in parallel with it (stream_mux.c).
+    const io_stream_t *host_ports[] = {
+        usbInit(),
+#if UART1_ENABLE
+        serialOpen(0, UART1_BAUD_RATE),
+#endif
+#if UART2_ENABLE
+        serialOpen(1, UART2_BAUD_RATE),
+#endif
+    };
+
+    stream_mux_connect(host_ports, sizeof(host_ports) / sizeof(io_stream_t *));
     system_register_commands(&boot_commands);
 
 #else
-    if(!stream_connect_instance(SERIAL_STREAM, BAUD_RATE))
+
+    // USART1 is the host port, USART2 may work in parallel with it.
+    const io_stream_t *host_ports[] = {
+        serialOpen(0, BAUD_RATE),
+#if UART2_ENABLE
+        serialOpen(1, UART2_BAUD_RATE),
+#endif
+    };
+
+    if(!stream_mux_connect(host_ports, sizeof(host_ports) / sizeof(io_stream_t *)))
         while(true); // Cannot boot if no communication channel is available!
 #endif
 
@@ -1064,6 +1144,11 @@ bool driver_init (void)
 #else
     hal.nvs.type = NVS_None;
 #endif
+
+    if((nvs_address = nvs_alloc(sizeof(driver_settings_t))))
+        settings_register(&driver_setting_details);
+    else
+        driver_settings.limits_fitted.mask = DEFAULT_LIMIT_SWITCHES_FITTED & AXES_BITMASK;
 
 // driver capabilities, used for announcing and negotiating (with the core) driver functionality
 

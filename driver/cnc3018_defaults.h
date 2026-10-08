@@ -56,7 +56,11 @@
 #define DEFAULT_SPINDLE_PWM_FREQ 1000
 
 // The stock 3018 has no limit switches: homing, hard and soft limits off.
-// Enable with $22=1, $21=1, $20=1 after fitting switches (NO to GND).
+// After fitting switches (NO to GND) set $450 to the axes that have them
+// (driver setting, 7 = X, Y and Z), then $22=1, $21=1, $20=1 as needed.
+// With $450=0 the limit inputs are ignored: nothing has to be connected
+// or jumpered there, whatever the switch logic ($5) is.
+#define DEFAULT_LIMIT_SWITCHES_FITTED 0
 #define DEFAULT_HOMING_ENABLE 0
 #define DEFAULT_HARD_LIMIT_ENABLE 0
 #define DEFAULT_SOFT_LIMIT_ENABLE 0
@@ -73,6 +77,7 @@
 //   $14 control buttons (reset, feed hold, cycle start, door) NO.
 //   $6  probe: touching the plate pulls the pin low.
 // With nothing connected the pins stay high: nothing is triggered.
+// (Limit inputs of axes not in $450 are ignored anyway.)
 #define DEFAULT_LIMIT_SIGNALS_INVERT_MASK 7
 #define DEFAULT_CONTROL_SIGNALS_INVERT_MASK -1
 #define DEFAULT_PROBE_SIGNAL_INVERT 1
