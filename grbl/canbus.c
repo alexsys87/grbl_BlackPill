@@ -108,15 +108,27 @@ ISR_CODE static bool ISR_FUNC(canbus_queue_rx)(canbus_message_t message, can_rx_
 // called every 1 ms
 static void canbus_poll (void *data)
 {
+    // The volatile buffer members are read one per statement: their order
+    // within a statement would be unspecified.
+    uint8_t tail = tx_buffer.tail;
+
     /* if have TX data, sends one message per iteration.. */
-    if(tx_buffer.head != tx_buffer.tail && can_put(tx_buffer.tx[tx_buffer.tail].message, tx_buffer.tx[tx_buffer.tail].ext_id))
-        tx_buffer.tail = (tx_buffer.tail + 1) % CANBUS_BUFFER_LEN;
+    if(tx_buffer.head != tail) {
+        canbus_message_t message = tx_buffer.tx[tail].message;
+        bool ext_id = tx_buffer.tx[tail].ext_id;
+        if(can_put(message, ext_id))
+            tx_buffer.tail = (tail + 1) % CANBUS_BUFFER_LEN;
+    }
 
     /* if have RX data, process one message per iteration.. */
-    if(rx_buffer.head != rx_buffer.tail) {
-        if(rx_buffer.rx[rx_buffer.tail].callback)
-            rx_buffer.rx[rx_buffer.tail].callback(rx_buffer.rx[rx_buffer.tail].message);
-        rx_buffer.tail = (rx_buffer.tail + 1) % CANBUS_BUFFER_LEN;
+    tail = rx_buffer.tail;
+    if(rx_buffer.head != tail) {
+        can_rx_ptr callback = rx_buffer.rx[tail].callback;
+        if(callback) {
+            canbus_message_t message = rx_buffer.rx[tail].message;
+            callback(message);
+        }
+        rx_buffer.tail = (tail + 1) % CANBUS_BUFFER_LEN;
     }
 }
 

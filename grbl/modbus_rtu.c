@@ -179,8 +179,10 @@ static void modbus_poll (void *data)
 
                 if(packet->async) {
                     state = ModBus_Silent;
-                    if(packet->callbacks.on_rx_timeout)
-                        packet->callbacks.on_rx_timeout(0, packet->msg.context);
+                    if(packet->callbacks.on_rx_timeout) {
+                        void *context = packet->msg.context; // One volatile read per statement.
+                        packet->callbacks.on_rx_timeout(0, context);
+                    }
                     packet = NULL;
                 } else if(stream.read() == packet->msg.adu[0] && (stream.read() & 0x80)) {
                     int32_t code = stream.read();
@@ -215,8 +217,10 @@ static void modbus_poll (void *data)
                         // CRC check error
                         stats.crc_errors++;
                         if((state = packet->async ? ModBus_Silent : ModBus_Exception) == ModBus_Silent) {
-                            if(packet->callbacks.on_rx_exception)
-                                packet->callbacks.on_rx_exception(ModBus_CRCError, packet->msg.context);
+                            if(packet->callbacks.on_rx_exception) {
+                                void *context = packet->msg.context; // One volatile read per statement.
+                                packet->callbacks.on_rx_exception(ModBus_CRCError, context);
+                            }
                             packet = NULL;
                         }
                         silence_until = hal.get_elapsed_ticks() + silence_timeout;
@@ -286,15 +290,19 @@ static bool modbus_send_rtu (modbus_message_t *msg, const modbus_callbacks_t *ca
             switch(state) {
 
                 case ModBus_TimeoutException:
-                    if(packet->callbacks.on_rx_timeout)
-                        packet->callbacks.on_rx_timeout(ModBus_Timeout, packet->msg.context);
+                    if(packet->callbacks.on_rx_timeout) {
+                        void *context = packet->msg.context; // One volatile read per statement.
+                        packet->callbacks.on_rx_timeout(ModBus_Timeout, context);
+                    }
                     if(!(is_blocking = packet->callbacks.retries > 0))
                         stats.no_rx = stream.get_rx_buffer_count() == 0;
                     break;
 
                 case ModBus_Exception:
-                    if(packet->callbacks.on_rx_exception)
-                        packet->callbacks.on_rx_exception((uint8_t)exception_code, packet->msg.context);
+                    if(packet->callbacks.on_rx_exception) {
+                        void *context = packet->msg.context; // One volatile read per statement.
+                        packet->callbacks.on_rx_exception((uint8_t)exception_code, context);
+                    }
                     is_blocking = packet->callbacks.retries > 0;
                     break;
 

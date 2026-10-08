@@ -1162,7 +1162,8 @@ bool driver_init (void)
 ISR_CODE void STEPPER_TIMER_IRQHandler (void);
 ISR_CODE void STEPPER_TIMER_IRQHandler (void)
 {
-    uint32_t pending = STEPPER_TIMER->SR & STEPPER_TIMER->DIER;
+    uint32_t pending = STEPPER_TIMER->SR;   // One register read per statement:
+    pending &= STEPPER_TIMER->DIER;         // the order of volatile accesses would be unspecified.
 
     // Step pulse off
     if(pending & TIM_SR_CC1IF) {

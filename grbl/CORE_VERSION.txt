@@ -16,7 +16,10 @@ parts of the C library. The GCC build behaves the same with them.
 - nuts_bolts.h, strutils.c/.h: ffs() and strlcpy() for IAR.
 - Warnings: explicit casts for enum / int and float / int / double
   conversions, no initializers that a switch jumps over, unused variables
-  and an unused function removed.
+  and an unused function removed; one volatile read per statement where
+  their order was unspecified (canbus.c, modbus_rtu.c, grbllib.c); the
+  always true tool number check in settings.c only for a lower
+  MAX_TOOL_NUMBER.
 - Fixes: gcode.c G5.1 checked I twice instead of I and J; protocol.c passed
   an alarm code as message code (Message_MotorFault); stepper2.c didn't
   chain grbl.on_reset.
