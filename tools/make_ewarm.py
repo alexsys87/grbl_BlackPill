@@ -18,6 +18,7 @@ CHIPS = [
     # name, define, ICF, startup, chip menu, debugger ddf, flash loader
     ('STM32F401CC', 'STM32F401xC', 'stm32f401xc_flash.icf', 'startup_stm32f401xc.s', 'FlashSTM32F401xC.board'),
     ('STM32F401CE', 'STM32F401xE', 'stm32f401xe_flash.icf', 'startup_stm32f401xe.s', 'FlashSTM32F401xE.board'),
+    ('STM32F411CE', 'STM32F411xE', 'stm32f411xe_flash.icf', 'startup_stm32f411xe.s', 'FlashSTM32F411xE.board'),
 ]
 
 INCLUDES = ['$PROJ_DIR$\\..', '$PROJ_DIR$\\..\\cmsis\\core', '$PROJ_DIR$\\..\\cmsis\\device',

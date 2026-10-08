@@ -46,6 +46,31 @@ public class StringsTests
     }
 
     [Fact]
+    public void EveryKeyTheProgramUsesExists()
+    {
+        var en = Load("Strings.en.xaml");
+        string app = Path.GetDirectoryName(ResourcesDir())!;
+        // {DynamicResource S.Key} in XAML, Loc.T("S.Key") / Loc.F("S.Key", …) in code;
+        // keys put together at run time ("S.Conn." + msg) end with a dot and are skipped.
+        var xaml = new System.Text.RegularExpressions.Regex(@"DynamicResource (S\.[A-Za-z0-9.]+)\}");
+        var code = new System.Text.RegularExpressions.Regex(@"Loc\.[TF]\(""(S\.[A-Za-z0-9.]*[A-Za-z0-9])""");
+        var missing = new List<string>();
+        foreach (var file in Directory.EnumerateFiles(app, "*.*", SearchOption.AllDirectories))
+        {
+            string sep = Path.DirectorySeparatorChar.ToString();
+            if (file.Contains(sep + "obj" + sep) || file.Contains(sep + "bin" + sep))
+                continue;
+            var re = file.EndsWith(".xaml") ? xaml : file.EndsWith(".cs") ? code : null;
+            if (re == null)
+                continue;
+            foreach (System.Text.RegularExpressions.Match m in re.Matches(File.ReadAllText(file)))
+                if (!en.ContainsKey(m.Groups[1].Value))
+                    missing.Add(Path.GetFileName(file) + ": " + m.Groups[1].Value);
+        }
+        Assert.Empty(missing);
+    }
+
+    [Fact]
     public void EveryEnumValueHasAText()
     {
         var en = Load("Strings.en.xaml");

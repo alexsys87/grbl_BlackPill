@@ -101,6 +101,110 @@ public sealed partial class MainViewModel
         if (!CanLoadFile)
             return;
         await LoadAsync(Path.GetFileName(path), () => GCodeDocument.Load(path));
+        if (_sourceDocument?.Path == path)
+            AddRecent(_settings.RecentFiles, path);
+        else
+            RemoveRecent(_settings.RecentFiles, path);
+        OnPropertyChanged(nameof(RecentFiles));
+    }
+
+    private void OpenRecent(string? path)
+    {
+        if (path == null)
+            return;
+        if (!File.Exists(path))
+        {
+            RemoveRecent(_settings.RecentFiles, path);
+            OnPropertyChanged(nameof(RecentFiles));
+            Notify(Loc.T("S.Notice.OpenFailed"), Loc.F("S.Notice.FileGone", path), NotifySeverity.Warning);
+            return;
+        }
+        _ = LoadFileAsync(path);
+    }
+
+    public IReadOnlyList<RecentItem> RecentFiles => _settings.RecentFiles.Select(p => new RecentItem(p)).ToList();
+
+    private const int MaxRecent = 10;
+
+    private static void AddRecent(List<string> list, string path)
+    {
+        list.RemoveAll(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+        list.Insert(0, path);
+        if (list.Count > MaxRecent)
+            list.RemoveRange(MaxRecent, list.Count - MaxRecent);
+    }
+
+    private static void RemoveRecent(List<string> list, string path) =>
+        list.RemoveAll(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+
+    // ---------------------------------------------------------------- editing and saving
+
+    private bool _isEditing;
+    /// <summary>The listing is replaced by an editor with the program text.</summary>
+    public bool IsEditing
+    {
+        get => _isEditing;
+        private set
+        {
+            if (Set(ref _isEditing, value))
+                RelayCommand.Refresh();
+        }
+    }
+
+    private string _editText = "";
+    public string EditText { get => _editText; set => Set(ref _editText, value); }
+
+    public RelayCommand EditProgramCommand { get; private set; } = null!;
+    public RelayCommand ApplyEditCommand { get; private set; } = null!;
+    public RelayCommand CancelEditCommand { get; private set; } = null!;
+    public RelayCommand SaveProgramAsCommand { get; private set; } = null!;
+    public RelayCommand OpenRecentCommand { get; private set; } = null!;
+
+    private void EditProgram()
+    {
+        StopSimulation();
+        EditText = _sourceDocument != null ? string.Join(Environment.NewLine, _sourceDocument.Lines) : "";
+        IsEditing = true;
+    }
+
+    private void ApplyEdit()
+    {
+        var src = _sourceDocument;
+        string name = src?.Name ?? Loc.T("S.NewProgramName");
+        string? path = src?.Path;
+        string text = EditText;
+        _ = LoadAsync(name, () => GCodeDocument.FromBytes(name, path, System.Text.Encoding.UTF8.GetBytes(text)));
+    }
+
+    /// <summary>Save the program; "leveled": the program with the height map applied.</summary>
+    private void SaveProgramAs(bool leveled)
+    {
+        var doc = leveled ? Document : _sourceDocument;
+        if (doc == null)
+            return;
+        string baseName = Path.GetFileNameWithoutExtension(doc.Name);
+        var dlg = new SaveFileDialog
+        {
+            Title = Loc.T("S.SaveDialogTitle"),
+            Filter = Loc.T("S.OpenDialogFilter"),
+            DefaultExt = ".nc",
+            FileName = (leveled ? baseName + "_leveled" : baseName) + Path.GetExtension(doc.Name),
+            InitialDirectory = _settings.LastFolder ?? "",
+        };
+        if (dlg.ShowDialog() != true)
+            return;
+        try
+        {
+            File.WriteAllText(dlg.FileName, string.Join(Environment.NewLine, doc.Lines) + Environment.NewLine);
+            _settings.LastFolder = Path.GetDirectoryName(dlg.FileName);
+            Log(LogKind.Info, Loc.F("S.Log.Saved", dlg.FileName));
+            if (!leveled)
+                _ = LoadFileAsync(dlg.FileName);
+        }
+        catch (Exception ex)
+        {
+            Notify(Loc.T("S.Notice.SaveFailed"), ex.Message, NotifySeverity.Error);
+        }
     }
 
     private Task LoadDemoAsync() =>
@@ -138,16 +242,23 @@ public sealed partial class MainViewModel
             var progress = new Progress<double>(p => LoadProgress = p * 100);
             var options = MakeToolpathOptions();
             _toolpathOptionsDirty = false;
-            var (doc, tp, items) = await Task.Run(() =>
+            var map = HeightMapActive ? HeightMap : null;
+            double segment = MapSegment;
+            var (src, doc, tp, items) = await Task.Run(() =>
             {
-                var d = load();
+                var s = load();
+                var d = Leveled(s, map, segment);
                 var t = ToolpathBuilder.Build(d.Lines, options, default, progress);
                 var lines = new GCodeLineItem[d.Lines.Count];
                 for (int i = 0; i < lines.Length; i++)
                     lines[i] = new GCodeLineItem(i, d.Lines[i]);
-                return (d, t, lines);
+                return (s, d, t, lines);
             });
+            _sourceDocument = src;
+            IsEditing = false;
             SetDocument(doc, tp, items);
+            if (map != null)
+                FileName = doc.Name + Loc.T("S.Map.Suffix");
             Log(LogKind.Info, Loc.F("S.Log.Opened", doc.Name, doc.Lines.Count, tp.Layers.Count));
         }
         catch (Exception ex)
@@ -202,6 +313,8 @@ public sealed partial class MainViewModel
             warn.Add(Loc.F("S.Warn.TooBig", _settings.TableWidth, _settings.TableDepth, _settings.TableHeight));
         if (tp.MaxSpindle <= 0 && tp.CutLength > 0)
             warn.Add(Loc.T("S.Warn.NoSpindle"));
+        if (HeightMapWarning(tp) is { } mapWarning)
+            warn.Add(mapWarning);
         FileWarning = string.Join("\n", warn);
     }
 
@@ -407,6 +520,8 @@ public sealed partial class MainViewModel
 
     private void OnJobCompleted(JobResult result)
     {
+        if (OnMapJobCompleted(result))
+            return;
         if (!IsJobRunning)
             return;
         double elapsed = _clock.Elapsed.TotalSeconds - _jobStart - _pausedTotal;
@@ -488,6 +603,13 @@ public sealed partial class MainViewModel
             if (path != null)
                 _ = LoadFileAsync(path);
         }, () => CanLoadFile && Document?.Path != null);
+        OpenRecentCommand = new RelayCommand(p => OpenRecent(p as string), _ => CanLoadFile);
+        EditProgramCommand = new RelayCommand(EditProgram, () => CanLoadFile && !IsEditing);
+        ApplyEditCommand = new RelayCommand(ApplyEdit, () => CanLoadFile && IsEditing);
+        CancelEditCommand = new RelayCommand(() => IsEditing = false, () => IsEditing);
+        SaveProgramAsCommand = new RelayCommand(p => SaveProgramAs(p as string == "leveled"),
+            p => p as string == "leveled" ? HeightMapActive && Document != null : _sourceDocument != null);
+        CreateHeightMapCommands();
 
         StartJobCommand = new RelayCommand(StartJob,
             () => IsOnline && Document != null && !IsJobRunning && !IsLoading &&
@@ -498,6 +620,18 @@ public sealed partial class MainViewModel
         StartFromCurrentLineCommand = new RelayCommand(() => StartLine = CurrentLine + 1,
             () => !IsJobRunning && CurrentLine >= 0);
     }
+}
+
+/// <summary>A file of a recent list: the name shown, the path as tool tip.</summary>
+public sealed class RecentItem
+{
+    public RecentItem(string path)
+    {
+        Path = path;
+    }
+
+    public string Path { get; }
+    public string Name => System.IO.Path.GetFileName(Path);
 }
 
 public sealed class LegendItem

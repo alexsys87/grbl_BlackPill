@@ -37,6 +37,27 @@ public sealed class AppSettings
     /// <summary>Spindle spin-up before cutting when starting in the middle, s.</summary>
     public double SpindleDelay { get; set; } = 3;
 
+    /// <summary>Height map: area (work coordinates), grid, probing heights and feed, interpolation, segment length.</summary>
+    public double MapX { get; set; }
+    public double MapY { get; set; }
+    public double MapWidth { get; set; } = 60;
+    public double MapHeight { get; set; } = 40;
+    public int MapPointsX { get; set; } = 5;
+    public int MapPointsY { get; set; } = 4;
+    public double MapSafeZ { get; set; } = 2;
+    public double MapProbeZ { get; set; } = -2;
+    public double MapFeed { get; set; } = 50;
+    public bool MapBicubic { get; set; } = true;
+    public double MapSegment { get; set; } = 2;
+
+    /// <summary>Jog with the keyboard (arrows, Page Up / Down, numeric keypad).</summary>
+    public bool KeyboardJog { get; set; }
+    /// <summary>Jog while a button or key is held instead of by steps.</summary>
+    public bool JogContinuous { get; set; }
+
+    public List<string> RecentFiles { get; set; } = new();
+    public List<string> RecentMaps { get; set; } = new();
+
     public bool ShowRapids { get; set; } = true;
     public bool HideStatusLines { get; set; } = true;
     public bool ShowJobLines { get; set; }

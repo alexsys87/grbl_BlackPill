@@ -66,6 +66,14 @@ public sealed class VirtualGrbl : IGrblTransport
     /// <summary>Machine Z of the virtual probe plate, mm (G38.x touches it).</summary>
     public double ProbePlateZ { get; set; } = -30;
 
+    /// <summary>
+    /// Uneven stock for height map tests: machine Z of the surface at machine
+    /// X / Y. Null: the flat plate at <see cref="ProbePlateZ"/>.
+    /// </summary>
+    public Func<double, double, double>? ProbeSurface { get; set; }
+
+    private double SurfaceZ(Vector3 p) => ProbeSurface?.Invoke(p.X, p.Y) ?? ProbePlateZ;
+
     /// <summary>Lines received, for tests.</summary>
     public List<string> Received { get; } = new();
 
@@ -293,7 +301,7 @@ public sealed class VirtualGrbl : IGrblTransport
         sb.Append("|FS:").Append(feed.ToString("0", inv)).Append(',')
           .Append((_spindleOn ? _spindleRpm * _spindleOv / 100 : 0).ToString("0", inv));
         var pins = new StringBuilder();
-        if (_mpos.Z <= ProbePlateZ)
+        if (_mpos.Z <= SurfaceZ(_mpos))
             pins.Append('P');
         if (pins.Length > 0)
             sb.Append("|Pn:").Append(pins);
@@ -375,12 +383,13 @@ public sealed class VirtualGrbl : IGrblTransport
             double step = speed * dt;
             if (b.Probe)
             {
-                // Touch: the plate at ProbePlateZ.
+                // Touch: the plate (or the surface) under the probe.
                 var p = b.At(Math.Min(b.Length, _currentDone + step));
-                bool touch = p.Z <= ProbePlateZ;
+                double plate = SurfaceZ(p);
+                bool touch = p.Z <= plate;
                 if (touch ^ b.ProbeAway)
                 {
-                    var hit = new Vector3(p.X, p.Y, b.ProbeAway ? p.Z : (float)ProbePlateZ);
+                    var hit = new Vector3(p.X, p.Y, b.ProbeAway ? p.Z : (float)plate);
                     _mpos = hit;
                     _probePos = hit;
                     _probeOk = true;
@@ -440,7 +449,10 @@ public sealed class VirtualGrbl : IGrblTransport
                 ExecuteSynced(l, output);
                 continue;
             }
-            if (_dwellUntil >= 0 || _planner.Count >= PlannerBlocks - 1)
+            // A probe move blocks the parser until it ends, as in grbl: the
+            // next lines start from where the probe stopped.
+            if (_dwellUntil >= 0 || _planner.Count >= PlannerBlocks - 1 || (_current?.Probe ?? false) ||
+                _planner.Any(b => b.Probe))
                 return;
             string s = _rx.ToString();
             int nl = s.IndexOf('\n');
@@ -854,7 +866,7 @@ public sealed class VirtualGrbl : IGrblTransport
             if (gc.Feed <= 0)
                 return 22;
             bool away = probe >= 38.4;
-            bool touching = start.Z <= ProbePlateZ;
+            bool touching = start.Z <= SurfaceZ(start);
             if (touching ^ away)
             {
                 Alarm(4, output);

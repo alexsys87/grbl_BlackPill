@@ -3,6 +3,7 @@
 # Renode tests.
 #   make                      default (USB CDC host port, STM32F401CC)
 #   make CHIP=F401E           STM32F401CE (512 KB flash, 96 KB RAM)
+#   make CHIP=F411E           STM32F411CE (512 KB flash, 128 KB RAM, 96 MHz)
 #   make TEST=1               Renode test build: host port on USART1
 #   make EXTRA="-DFOO"        additional defines
 
@@ -21,6 +22,10 @@ ifeq ($(CHIP),F401E)
   DEV   := STM32F401xE
   START := $(ROOT)/test/gcc/startup_stm32f401xc.s
   MEM   := -Wl,--defsym=__flash_size=512K -Wl,--defsym=__ram_size=96K
+else ifeq ($(CHIP),F411E)
+  DEV   := STM32F411xE
+  START := $(ROOT)/test/gcc/startup_stm32f411xe.s
+  MEM   := -Wl,--defsym=__flash_size=512K -Wl,--defsym=__ram_size=128K
 else
   DEV   := STM32F401xC
   START := $(ROOT)/test/gcc/startup_stm32f401xc.s

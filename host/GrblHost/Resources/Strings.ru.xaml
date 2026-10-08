@@ -264,4 +264,65 @@
     <sys:String x:Key="S.Log.SettingsWritten">Записано настроек: {0}</sys:String>
     <sys:String x:Key="S.Log.CommandError">{0}: error:{1} — {2}</sys:String>
     <sys:String x:Key="S.Log.EstimateOld">Оценка времени посчитана до чтения настроек станка, перечитайте файл для точной</sys:String>
+    <sys:String x:Key="S.TabMap">Карта</sys:String>
+    <sys:String x:Key="S.TabMapTip">Карта высот заготовки: снять щупом и вести по ней программу (как в Candle)</sys:String>
+    <sys:String x:Key="S.Map.Title">Карта высот</sys:String>
+    <sys:String x:Key="S.Map.Area">Область (рабочие координаты, мм)</sys:String>
+    <sys:String x:Key="S.Map.Width">Ширина</sys:String>
+    <sys:String x:Key="S.Map.Height">Высота</sys:String>
+    <sys:String x:Key="S.Map.PointsX">Точек по X</sys:String>
+    <sys:String x:Key="S.Map.PointsY">Точек по Y</sys:String>
+    <sys:String x:Key="S.Map.FromProgram">По программе</sys:String>
+    <sys:String x:Key="S.Map.FromProgramTip">Область резов загруженной программы, точки примерно через 10 мм</sys:String>
+    <sys:String x:Key="S.Map.Step">Шаг {0:0.##} × {1:0.##} мм, точек: {2}</sys:String>
+    <sys:String x:Key="S.Map.Probing">Зондирование</sys:String>
+    <sys:String x:Key="S.Map.SafeZ">Z переходов</sys:String>
+    <sys:String x:Key="S.Map.ProbeZ">Z до</sys:String>
+    <sys:String x:Key="S.Map.Probe">Снять карту</sys:String>
+    <sys:String x:Key="S.Map.ProbeHint">Сначала обнулите X, Y и примерно Z на заготовке, подключите щуп (провод на фрезу, контакт на заготовку). В каждой точке: подъём на Z переходов, G38.2 вниз до «Z до». Нет касания — тревога, съём останавливается.</sys:String>
+    <sys:String x:Key="S.Map.None">Карты нет</sys:String>
+    <sys:String x:Key="S.Map.Empty">Не снята, точек: {0}</sys:String>
+    <sys:String x:Key="S.Map.Status">Снято {0} из {1} точек, Z от {2:0.###} до {3:0.###} (перепад {4:0.###} мм)</sys:String>
+    <sys:String x:Key="S.Map.Done">Карта снята.</sys:String>
+    <sys:String x:Key="S.Map.NotComplete">Сначала снимите или откройте полную карту высот</sys:String>
+    <sys:String x:Key="S.Map.Outside">Программа выходит за область карты высот: за её краем высота продолжается от крайних точек</sys:String>
+    <sys:String x:Key="S.Map.Use">Применение</sys:String>
+    <sys:String x:Key="S.Map.Apply">Вести программу по карте высот</sys:String>
+    <sys:String x:Key="S.Map.Segment">Отрезок, мм</sys:String>
+    <sys:String x:Key="S.Map.Bicubic">Бикубическая</sys:String>
+    <sys:String x:Key="S.Map.BicubicTip">Плавная поверхность через все точки; выключено — билинейная между соседними точками</sys:String>
+    <sys:String x:Key="S.Map.Show">Показывать карту в 3D</sys:String>
+    <sys:String x:Key="S.Map.Clear">Удалить</sys:String>
+    <sys:String x:Key="S.Map.SaveLeveled">Сохранить с картой…</sys:String>
+    <sys:String x:Key="S.Map.SaveLeveledTip">Сохранить программу с применённой картой высот (для другой программы-отправителя)</sys:String>
+    <sys:String x:Key="S.Map.UseHint">Каждое перемещение делится на отрезки не длиннее заданного, дуги — на хорды, к Z прибавляется высота поверхности. Карта сохраняется в текстовый файл .map.</sys:String>
+    <sys:String x:Key="S.Map.OpenTitle">Открыть карту высот</sys:String>
+    <sys:String x:Key="S.Map.SaveTitle">Сохранить карту высот</sys:String>
+    <sys:String x:Key="S.Map.Filter">Карта высот (*.map)|*.map|Все файлы (*.*)|*.*</sys:String>
+    <sys:String x:Key="S.Map.Suffix" xml:space="preserve"> (по карте высот)</sys:String>
+    <sys:String x:Key="S.Ask.MapProbe">Снять карту высот: {0} точек.
+
+Щуп подключён, X/Y/Z обнулены на заготовке? Переходы на Z {1}, зондирование вниз до Z {2}.</sys:String>
+    <sys:String x:Key="S.Log.MapStarted">Съём карты высот: {0} точек</sys:String>
+    <sys:String x:Key="S.Log.MapAborted">Съём карты прерван: {0} из {1} точек</sys:String>
+    <sys:String x:Key="S.Log.MapOpened">Карта высот {0}.</sys:String>
+    <sys:String x:Key="S.RecentMaps">Недавние карты</sys:String>
+    <sys:String x:Key="S.RecentFiles">Недавние файлы</sys:String>
+    <sys:String x:Key="S.SaveEllipsis">Сохранить…</sys:String>
+    <sys:String x:Key="S.SaveAsEllipsis">Сохранить как…</sys:String>
+    <sys:String x:Key="S.SaveDialogTitle">Сохранить программу</sys:String>
+    <sys:String x:Key="S.EditProgram">Правка</sys:String>
+    <sys:String x:Key="S.EditProgramTip">Редактировать программу (Ctrl+E)</sys:String>
+    <sys:String x:Key="S.ApplyEdit">Применить</sys:String>
+    <sys:String x:Key="S.ApplyEditTip">Пересчитать траекторию по изменённому тексту</sys:String>
+    <sys:String x:Key="S.Cancel">Отмена</sys:String>
+    <sys:String x:Key="S.NewProgramName">новая.nc</sys:String>
+    <sys:String x:Key="S.Notice.SaveFailed">Не удалось сохранить</sys:String>
+    <sys:String x:Key="S.Notice.FileGone">Файла больше нет: {0}</sys:String>
+    <sys:String x:Key="S.Log.Saved">Сохранено: {0}</sys:String>
+    <sys:String x:Key="S.JogContinuous">Непрерывно</sys:String>
+    <sys:String x:Key="S.JogContinuousTip">Станок едет, пока кнопка или клавиша нажата, и останавливается при отпускании. С программными пределами ($20=1) включите $40=1, чтобы перемещение обрезалось по ним</sys:String>
+    <sys:String x:Key="S.KeyboardJog">С клавиатуры</sys:String>
+    <sys:String x:Key="S.KeyboardJogTip">Стрелки — X/Y, Page Up/Down — Z; цифровой блок: 4 6 8 2 — X/Y, 9 3 — Z, 7 1 — диагонали, + − — шаг, 5 или Esc — стоп</sys:String>
+    <sys:String x:Key="S.SpindleApplyTip">Задать обороты работающему шпинделю (S)</sys:String>
 </ResourceDictionary>

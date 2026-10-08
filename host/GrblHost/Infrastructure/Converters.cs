@@ -26,11 +26,11 @@ public sealed class InverseBoolConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object? parameter, CultureInfo culture) => value is not true;
 }
 
-/// <summary>Null → Collapsed, anything else → Visible.</summary>
+/// <summary>Null, an empty string or a count of 0 → Collapsed, anything else → Visible.</summary>
 public sealed class NullToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value == null || value is string { Length: 0 } ? Visibility.Collapsed : Visibility.Visible;
+        value == null || value is string { Length: 0 } or 0 ? Visibility.Collapsed : Visibility.Visible;
 
     public object ConvertBack(object value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();

@@ -24,7 +24,23 @@
                                    Command="{Binding ReloadCommand}" />
                         <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon DocumentBulletList24}" Content="{DynamicResource S.DemoProgram}"
                                    Command="{Binding OpenDemoCommand}" ToolTip="{DynamicResource S.DemoTip}" />
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon Edit24}" Content="{DynamicResource S.EditProgram}"
+                                   Command="{Binding EditProgramCommand}" ToolTip="{DynamicResource S.EditProgramTip}" />
+                        <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon Save24}" Content="{DynamicResource S.SaveAsEllipsis}"
+                                   Command="{Binding SaveProgramAsCommand}" ToolTip="Ctrl+S" />
                     </WrapPanel>
+                    <TextBlock Style="{StaticResource Label}" Margin="0,8,0,2" Text="{DynamicResource S.RecentFiles}"
+                               Visibility="{Binding RecentFiles.Count, Converter={StaticResource NullToVisibility}}" />
+                    <ItemsControl ItemsSource="{Binding RecentFiles}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ui:Button Padding="4,2" Margin="0,1" Appearance="Transparent" HorizontalContentAlignment="Left"
+                                           Icon="{ui:SymbolIcon Document24}" Content="{Binding Name}" ToolTip="{Binding Path}"
+                                           Command="{Binding DataContext.OpenRecentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                           CommandParameter="{Binding Path}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <TextBlock Style="{StaticResource Hint}" Text="{DynamicResource S.DropHint}" />
                 </StackPanel>
             </ui:Card>

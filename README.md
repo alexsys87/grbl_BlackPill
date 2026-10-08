@@ -1,7 +1,8 @@
-# grbl_BlackPill — grblHAL для CNC 3018 на STM32F401 BlackPill
+# grbl_BlackPill — grblHAL для CNC 3018 на STM32F401 / STM32F411 BlackPill
 
 Прошивка [grblHAL](https://github.com/grblHAL/core) для настольного фрезера
-CNC 3018 на плате **WeAct Studio BlackPill STM32F401CCU6 / STM32F401CEU6**.
+CNC 3018 на плате **WeAct Studio BlackPill STM32F401CCU6 / STM32F401CEU6 /
+STM32F411CEU6**. Распиновка у всех трёх одинаковая.
 Драйвер платы написан **только на регистрах и CMSIS** (без HAL / LL / Cube),
 проект — для **IAR Embedded Workbench for ARM**. За основу взяты структура,
 CMSIS, тактирование, USB CDC и проект IAR из
@@ -10,7 +11,9 @@ CMSIS, тактирование, USB CDC и проект IAR из
 (список — в `grbl/CORE_VERSION.txt`).
 
 В каталоге [`host`](host/README.md) — программа управления станком для
-Windows (WPF, .NET 8), переделанная из Teacup Host.
+Windows (WPF, .NET 8), переделанная из Teacup Host, с возможностями Candle:
+карта высот (автовыравнивание по щупу), непрерывное перемещение и
+управление с клавиатуры, правка программы, недавние файлы.
 
 ## Что есть
 
@@ -32,10 +35,12 @@ Windows (WPF, .NET 8), переделанная из Teacup Host.
   (сектор 1, 16 КБ по адресу 0x08004000);
 - команда **`$DFU`** — перезапуск в системный загрузчик STM32 для прошивки
   по USB без нажатия кнопки BOOT0;
-- 84 МГц от кварца 25 МГц (если кварц не запустился — от HSI);
+- 84 МГц (F401) или 96 МГц (F411) от кварца 25 МГц, USB 48 МГц (если кварц
+  не запустился — от HSI);
 - светодиод PC13 горит, когда контроллер работает.
 
-Размер: ~178 КБ flash, ~31 КБ ОЗУ — помещается в STM32F401CC (256 / 64 КБ).
+Размер: ~178 КБ flash, ~31 КБ ОЗУ — помещается даже в STM32F401CC (256 / 64 КБ);
+у F401CE и F411CE 512 КБ flash, у F411CE 128 КБ ОЗУ.
 
 ## Подключение
 
@@ -133,15 +138,16 @@ USB и оба UART работают одновременно ([`driver/stream_mu
 ## Сборка в IAR EWARM
 
 1. IAR Embedded Workbench for ARM 9.x.
-2. Откройте `ewarm/grbl_BlackPill.eww`. В нём два проекта:
-   `grbl_STM32F401CC` (256 КБ flash) и `grbl_STM32F401CE` (512 КБ) — выберите
-   по маркировке чипа на плате.
+2. Откройте `ewarm/grbl_BlackPill.eww`. В нём три проекта:
+   `grbl_STM32F401CC` (256 КБ flash), `grbl_STM32F401CE` (512 КБ) и
+   `grbl_STM32F411CE` (512 КБ, 128 КБ ОЗУ, 96 МГц) — выберите по маркировке
+   чипа на плате.
 3. Конфигурации `Debug` (оптимизация Medium) и `Release` (High, по размеру).
 4. Make (F7). Результат — `ewarm/<конфигурация>/<чип>/Exe/grbl_<чип>.out` и `.bin`.
 
-В проектах уже заданы: определения `STM32F401xC` / `STM32F401xE`, пути
+В проектах уже заданы: определения `STM32F401xC` / `STM32F401xE` / `STM32F411xE`, пути
 `$PROJ_DIR$\..`, `cmsis\core`, `cmsis\device`, `driver`, Preinclude
-`driver\cnc3018_defaults.h`, линкер-файлы `cmsis/linker/stm32f401x?_flash.icf`
+`driver\cnc3018_defaults.h`, линкер-файлы `cmsis/linker/stm32f4*_flash.icf`
 (сектор 1 flash исключён из кода — там настройки), startup из
 `cmsis/startup`, `char` без знака, расширения языка IAR включены.
 
@@ -159,6 +165,7 @@ IAR (`tools/ewarm_template.ewp/.ewd`). После добавления или у
 cd test/gcc
 make                 # STM32F401CC, связь по USB CDC  → build_F401C_0/grbl.elf, .bin
 make CHIP=F401E      # STM32F401CE
+make CHIP=F411E      # STM32F411CE (96 МГц)
 make TEST=1          # связь по USART1 (для эмулятора)
 ```
 
@@ -177,7 +184,7 @@ Windows 10/11 встроенный). Скорость порта значени�
 ## Тесты в эмуляторе Renode
 
 `test/renode/run_tests.py` запускает прошивку в [Renode](https://renode.io)
-(модель STM32F401 с USB OTG FS из проекта Teacup) и проверяет по протоколу
+(модель STM32F401 / F411 с USB OTG FS из проекта Teacup) и проверяет по протоколу
 grbl: приветствие и `$I`, `$$`, блокировку после ошибки и Ctrl-X, число
 шаговых импульсов (800 на мм), направление, дугу G2, паузу и продолжение,
 отмену перемещения, ШИМ шпинделя M3 / M4 / M5, СОЖ M7 / M8 / M9, запись
@@ -191,6 +198,10 @@ grbl: приветствие и `$I`, `$$`, блокировку после ош
 cd test/gcc && make TEST=1 && make
 python3 test/renode/run_tests.py                  # через USART1
 GRBL_PORT=usb python3 test/renode/run_tests.py    # через USB CDC
+
+cd test/gcc && make CHIP=F411E TEST=1 && make CHIP=F411E
+GRBL_CHIP=F411 python3 test/renode/run_tests.py   # STM32F411 на 96 МГц
+GRBL_CHIP=F411 GRBL_PORT=usb python3 test/renode/run_tests.py
 ```
 
 ## Структура
@@ -200,7 +211,7 @@ GRBL_PORT=usb python3 test/renode/run_tests.py    # через USB CDC
 | `grbl/` | ядро grblHAL (с правками для IAR, см. `CORE_VERSION.txt`) |
 | `driver/` | драйвер платы на регистрах: `driver.c` (шаги, входы, EXTI, таймеры), `spindle.c` (ШИМ TIM1), `serial.c` (USART1), `usb_cdc.c` (USB OTG FS CDC), `nvs_flash.c` (настройки во flash), `ioports_aux.c` (дополнительные входы / выходы), `cpu.c` (тактирование, DFU), `main.c` |
 | `driver/boards/` | карта выводов |
-| `cmsis/` | CMSIS Core, файлы устройства STM32F401, startup и линкер-файлы IAR |
+| `cmsis/` | CMSIS Core, файлы устройства STM32F401 / F411, startup и линкер-файлы IAR |
 | `ewarm/` | проекты IAR EWARM |
 | `tools/` | генератор проектов IAR |
 | `test/gcc/` | Makefile, startup и линкер-файл для GCC |

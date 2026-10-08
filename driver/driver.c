@@ -1,5 +1,6 @@
 /*
-  driver.c - grblHAL driver for STM32F401 (WeAct Black Pill), register level.
+  driver.c - grblHAL driver for STM32F401 / STM32F411 (WeAct Black Pill),
+             register level.
 
   Part of grbl_BlackPill (grblHAL driver, register level, IAR EWARM).
 
@@ -1044,11 +1045,7 @@ static void onReportOptions (bool newopt)
 // Main entry point of the driver, called once by the core.
 bool driver_init (void)
 {
-#if defined(STM32F401xE)
-    hal.info = "STM32F401CE";
-#else
-    hal.info = "STM32F401CC";
-#endif
+    hal.info = CPU_NAME;
     hal.driver_version = "261007";
     hal.driver_url = "https://github.com/alexsys87/grbl_BlackPill";
     hal.board = BOARD_NAME;

@@ -12,15 +12,20 @@ results.
 Usage: run_tests.py [renode] [grbl.elf]
   GRBL_PORT=usb  run the same tests over the USB CDC port
                  (model models/TeacupSTM32_OTGFS.cs), default is USART1.
+  GRBL_CHIP=F411 the STM32F411CE build (make CHIP=F411E) on a 96 MHz
+                 platform, default is F401 (STM32F401CC).
 """
 import os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PORT = os.environ.get('GRBL_PORT', 'uart')
 RENODE = sys.argv[1] if len(sys.argv) > 1 else 'renode'
+CHIP = os.environ.get('GRBL_CHIP', 'F401')     # F401 or F411
+BUILD = {'F401': 'F401C', 'F411': 'F411E'}[CHIP]
+MHZ = {'F401': 84, 'F411': 96}[CHIP]
 ELF = sys.argv[2] if len(sys.argv) > 2 else os.path.join(
-    HERE, '../gcc/build_F401C_%d/grbl.elf' % (0 if PORT == 'usb' else 1))
-REPL = os.path.join(HERE, 'stm32f401.repl')
+    HERE, '../gcc/build_%s_%d/grbl.elf' % (BUILD, 0 if PORT == 'usb' else 1))
+REPL = os.path.join(HERE, 'stm32%s.repl' % CHIP.lower())
 HOSTDEV = 'usb' if PORT == 'usb' else 'usart1'
 
 GPIOA_BSRR = 0x40020018
@@ -243,13 +248,13 @@ def check(name, cond, info=''):
     if not cond:
         fails += 1
 
-print('--- host port: %s ---' % PORT)
+print('--- %s, host port: %s ---' % (CHIP, PORT))
 boot = uart('boot') + uart('info')
 if PORT == 'uart':
     check('boot: welcome message', any(l.startswith('GrblHAL 1.1f') for l in boot), boot)
 info = uart('info')
 check('$I: board name', '[BOARD:CNC 3018 BlackPill]' in info, info)
-check('$I: driver, 84 MHz', any(l.startswith('[DRIVER:STM32F401') and '84MHz' in l for l in info), info)
+check('$I: driver, %d MHz' % MHZ, any(l.startswith('[DRIVER:STM32%s' % CHIP) and '%dMHz' % MHZ in l for l in info), info)
 check('$I: settings in flash', any('[NVS STORAGE:*FLASH' in l for l in info), info)
 s = uart('settings')
 check('$$: 800 steps/mm default', any(re.match(r'\$100=800\.0+$', l) for l in s), [l for l in s if l.startswith('$100')])

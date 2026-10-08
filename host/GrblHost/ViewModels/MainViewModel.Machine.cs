@@ -172,8 +172,121 @@ public sealed partial class MainViewModel
     public RelayCommand JogCommand { get; private set; } = null!;
     public RelayCommand JogCancelCommand { get; private set; } = null!;
 
-    /// <summary>"X+", "Y-", "Z+", "XY++" (diagonal) …</summary>
+    /// <summary>Jog with the keyboard: arrows X / Y, Page Up / Down Z, the numeric keypad as in Candle.</summary>
+    public bool KeyboardJog
+    {
+        get => _settings.KeyboardJog;
+        set
+        {
+            _settings.KeyboardJog = value;
+            OnPropertyChanged();
+            if (!value)
+                JogStop();
+        }
+    }
+
+    /// <summary>Move while a jog button or key is held; the step is not used.</summary>
+    public bool JogContinuous
+    {
+        get => _settings.JogContinuous;
+        set
+        {
+            _settings.JogContinuous = value;
+            OnPropertyChanged();
+            JogStop();
+        }
+    }
+
+    /// <summary>A jog button was clicked: one step (continuous jogs run from press to release).</summary>
     private void Jog(string what)
+    {
+        if (JogContinuous)
+            return;
+        JogBy(what, null);
+    }
+
+    private string? _continuousJog;
+
+    /// <summary>Start a continuous jog (button or key pressed): to the end of the travel.</summary>
+    public void JogStart(string what)
+    {
+        if (!CanJog || _continuousJog != null)
+            return;
+        _continuousJog = what;
+        JogBy(what, axis => axis switch
+        {
+            'X' => _settings.TableWidth,
+            'Y' => _settings.TableDepth,
+            _ => _settings.TableHeight,
+        });
+    }
+
+    /// <summary>The button or key was released: stop at once (jog cancel).</summary>
+    public void JogStop()
+    {
+        if (_continuousJog == null)
+            return;
+        _continuousJog = null;
+        _conn.JogCancel();
+    }
+
+    /// <summary>
+    /// A key went down or up. True when it was a jog key (handled): arrows
+    /// X / Y, Page Up / Down Z, keypad 4 6 8 2 (X Y), 9 3 (Z), 7 1 (diagonals),
+    /// keypad + / − the step, Esc or keypad 5 stop.
+    /// </summary>
+    public bool JogKey(System.Windows.Input.Key key, bool down, bool repeat)
+    {
+        if (!KeyboardJog)
+            return false;
+        string? what = key switch
+        {
+            System.Windows.Input.Key.Left or System.Windows.Input.Key.NumPad4 => "X-",
+            System.Windows.Input.Key.Right or System.Windows.Input.Key.NumPad6 => "X+",
+            System.Windows.Input.Key.Up or System.Windows.Input.Key.NumPad8 => "Y+",
+            System.Windows.Input.Key.Down or System.Windows.Input.Key.NumPad2 => "Y-",
+            System.Windows.Input.Key.PageUp or System.Windows.Input.Key.NumPad9 => "Z+",
+            System.Windows.Input.Key.PageDown or System.Windows.Input.Key.NumPad3 => "Z-",
+            System.Windows.Input.Key.NumPad7 => "XY-+",
+            System.Windows.Input.Key.NumPad1 => "XY--",
+            _ => null,
+        };
+        if (what == null)
+        {
+            if (!down)
+                return false;
+            switch (key)
+            {
+                case System.Windows.Input.Key.Add:
+                case System.Windows.Input.Key.Subtract:
+                    int i = Array.IndexOf(JogSteps, JogStep);
+                    i = Math.Clamp(i + (key == System.Windows.Input.Key.Add ? 1 : -1), 0, JogSteps.Length - 1);
+                    JogStep = JogSteps[i];
+                    return true;
+                case System.Windows.Input.Key.Escape:
+                case System.Windows.Input.Key.NumPad5:
+                    JogStop();
+                    _conn.JogCancel();
+                    return true;
+            }
+            return false;
+        }
+        if (JogContinuous)
+        {
+            if (!down)
+                JogStop();
+            else if (!repeat)
+                JogStart(what);
+        }
+        else if (down && !repeat && CanJog)
+        {
+            JogBy(what, null);
+        }
+        return true;
+    }
+
+    /// <summary>"X+", "Y-", "Z+", "XY++" (diagonal) … by the step, or by the distance per axis.</summary>
+    private void JogBy(string what, Func<char, double>? distance)
     {
         int split = what.IndexOfAny(new[] { '+', '-' });
         if (split <= 0)
@@ -186,7 +299,8 @@ public sealed partial class MainViewModel
         bool z = false;
         for (int i = 0; i < axes.Length && i < signs.Length; i++)
         {
-            words.Add(axes[i] + N(signs[i] == '-' ? -JogStep : JogStep));
+            double d = distance?.Invoke(axes[i]) ?? JogStep;
+            words.Add(axes[i] + N(signs[i] == '-' ? -d : d));
             z |= axes[i] == 'Z';
         }
         double feed = z ? JogFeedZ : JogFeedXY;
@@ -226,6 +340,12 @@ public sealed partial class MainViewModel
         get => _spindleRpm;
         set => Set(ref _spindleRpm, Math.Clamp(value, 0, 100000));
     }
+
+    private double _spindleMax = 10000;
+    /// <summary>Top of the speed slider: the controller's maximum spindle speed ($30).</summary>
+    public double SpindleMax { get => _spindleMax; private set => Set(ref _spindleMax, value); }
+
+    public RelayCommand SpindleApplyCommand { get; private set; } = null!;
 
     public RelayCommand SpindleCwCommand { get; private set; } = null!;
     public RelayCommand SpindleCcwCommand { get; private set; } = null!;
@@ -290,6 +410,8 @@ public sealed partial class MainViewModel
 
     private void OnProbe(Axes pos, bool ok)
     {
+        if (OnMapProbe(pos, ok))
+            return;
         if (!_probing)
             return;
         _probing = false;
@@ -371,6 +493,7 @@ public sealed partial class MainViewModel
                 case 130: _settings.TableWidth = v; OnPropertyChanged(nameof(BedWidth)); break;
                 case 131: _settings.TableDepth = v; OnPropertyChanged(nameof(BedDepth)); break;
                 case 132: _settings.TableHeight = v; break;
+                case 30: SpindleMax = v; break;
             }
         }
         if (id is >= 110 and <= 112 or >= 120 and <= 122 or 11 or 12)
@@ -457,6 +580,8 @@ public sealed partial class MainViewModel
         SpindleCwCommand = new RelayCommand(() => _conn.Send($"M3 S{N(SpindleRpm)}"), Control);
         SpindleCcwCommand = new RelayCommand(() => _conn.Send($"M4 S{N(SpindleRpm)}"), Control);
         SpindleOffCommand = new RelayCommand(() => _conn.Send("M5"), Control);
+        // The speed of the running spindle changes with a bare S word.
+        SpindleApplyCommand = new RelayCommand(() => _conn.Send($"S{N(SpindleRpm)}"), () => CanControl && SpindleOn);
         FloodCommand = new RelayCommand(() =>
         {
             if (CanControl)

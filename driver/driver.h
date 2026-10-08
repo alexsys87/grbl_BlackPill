@@ -1,5 +1,6 @@
 /*
-  driver.h - grblHAL driver for STM32F401 (WeAct Black Pill), register level.
+  driver.h - grblHAL driver for STM32F401 / STM32F411 (WeAct Black Pill),
+             register level.
 
   Part of grbl_BlackPill (grblHAL driver, register level, IAR EWARM).
 
@@ -95,17 +96,28 @@
 /*  Clocks and timers                                                      */
 /* ---------------------------------------------------------------------- */
 
-// The Black Pill F401 has a 25 MHz crystal. The PLL is set up for 84 MHz
-// (48 MHz for USB). Without a working crystal the PLL runs from the
-// internal 16 MHz RC oscillator (USB may then be unreliable).
+// The Black Pill (F401 and F411) has a 25 MHz crystal. The PLL is set up
+// for 84 MHz on the F401, 96 MHz on the F411 (48 MHz for USB on both; the
+// F411's 100 MHz maximum gives no exact USB clock). Without a working
+// crystal the PLL runs from the internal 16 MHz RC oscillator (USB may then
+// be unreliable).
 #ifndef HSE_CLOCK_HZ
 #define HSE_CLOCK_HZ    25000000UL
 #endif
+#if defined(STM32F411xE)
+#define F_CPU           96000000UL
+#define CPU_NAME        "STM32F411CE"
+#elif defined(STM32F401xE)
 #define F_CPU           84000000UL
-#define F_APB1          (F_CPU / 2)         // 42 MHz, APB1 timers run at 84 MHz
-#define F_APB2          F_CPU               // 84 MHz
+#define CPU_NAME        "STM32F401CE"
+#else
+#define F_CPU           84000000UL
+#define CPU_NAME        "STM32F401CC"
+#endif
+#define F_APB1          (F_CPU / 2)         // 42 / 48 MHz, APB1 timers run at F_CPU
+#define F_APB2          F_CPU               // 84 / 96 MHz
 
-// Main stepper timer: TIM5 (32 bit), counts up at 84 MHz / 4 = 21 MHz.
+// Main stepper timer: TIM5 (32 bit), counts up at F_CPU / 4 = 21 / 24 MHz.
 #define STEPPER_TIMER               TIM5
 #define STEPPER_TIMER_IRQn          TIM5_IRQn
 #define STEPPER_TIMER_IRQHandler    TIM5_IRQHandler
@@ -113,7 +125,7 @@
 #define STEPPER_TIMER_DIV           4
 #endif
 
-// Spindle PWM timer: TIM1 channel 1 on PA8 (AF1), clocked at 84 MHz.
+// Spindle PWM timer: TIM1 channel 1 on PA8 (AF1), clocked at F_CPU.
 #define SPINDLE_PWM_TIMER           TIM1
 #define SPINDLE_PWM_AF              1
 

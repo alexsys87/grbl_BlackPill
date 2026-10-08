@@ -29,6 +29,9 @@
                                                 ShowTool="{Binding ShowTool}"
                                                 BedWidth="{Binding BedWidth}"
                                                 BedDepth="{Binding BedDepth}"
+                                                HeightMap="{Binding HeightMap}"
+                                                HeightMapVersion="{Binding HeightMapVersion}"
+                                                ShowHeightMap="{Binding ShowHeightMap}"
                                                 />
                             <!-- View presets -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8">
