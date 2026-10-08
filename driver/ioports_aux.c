@@ -33,8 +33,10 @@ static volatile uint32_t event_bits;
 // Current level of an output pin (its ODR bit).
 #define OUTPUT_LEVEL(port, pin) ((((port)->ODR) >> (pin)) & 1U)
 
-static bool digital_out_cfg (xbar_t *output, gpio_out_config_t *config, bool persistent)
+static bool digital_out_cfg (xbar_t *output, xbar_cfg_ptr_t cfg_data, bool persistent)
 {
+    gpio_out_config_t *config = (gpio_out_config_t *)cfg_data;
+
     if(output->id < digital.out.n_ports) {
 
         output_signal_t *out = &aux_out[output->id];
@@ -74,8 +76,10 @@ static float digital_out_state (xbar_t *output)
     return value;
 }
 
-static bool digital_in_cfg (xbar_t *input, gpio_in_config_t *config, bool persistent)
+static bool digital_in_cfg (xbar_t *input, xbar_cfg_ptr_t cfg_data, bool persistent)
 {
+    gpio_in_config_t *config = (gpio_in_config_t *)cfg_data;
+
     if(input->id < digital.in.n_ports && config->pull_mode != PullMode_UpDown) {
 
         input_signal_t *in = &aux_in[input->id];

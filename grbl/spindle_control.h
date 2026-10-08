@@ -312,7 +312,7 @@ typedef struct spindle_pwm {
 typedef union
 {
     spindle_pwm_t *pwm;
-} spindle_context_ptr_t __attribute__ ((__transparent_union__));
+} spindle_context_ptr_t;
 
 /*! \brief Handlers and data for spindle support. */
 struct spindle_ptrs {

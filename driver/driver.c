@@ -412,7 +412,7 @@ static void limitsEnable (bool on, axes_signals_t homing_cycle)
             pin = xbar_fn_to_axismask(limit->id);
             disable = limit->group == PinGroup_Limit ? (pin.mask & homing_source.min.mask) : (pin.mask & homing_source.max.mask);
         }
-        gpio_irq_enable(limit, disable ? IRQ_Mode_None : limit->mode.irq_mode);
+        gpio_irq_enable(limit, disable ? IRQ_Mode_None : (pin_irq_mode_t)limit->mode.irq_mode);
     }
 }
 
@@ -512,7 +512,7 @@ static bool aux_claim_explicit (aux_ctrl_t *aux_ctrl)
         switch(aux_ctrl->function) {
 #if PROBE_ENABLE
             case Input_Probe:
-                hal.driver_cap.probe = probe_add(Probe_Default, aux_ctrl->port, pin->cap.irq_mode, aux_ctrl->input, probeGetState);
+                hal.driver_cap.probe = probe_add(Probe_Default, aux_ctrl->port, (pin_irq_mode_t)pin->cap.irq_mode, aux_ctrl->input, probeGetState);
                 break;
 #endif
 #if SAFETY_DOOR_ENABLE || (defined(RESET_PIN) && !ESTOP_ENABLE)
@@ -776,7 +776,7 @@ static void on_settings_changed (settings_t *settings, settings_changed_flags_t 
 
             if(input->group == PinGroup_Limit) {
                 EXTI->IMR &= ~input->bit;
-                gpio_irq_enable(input, input->mode.irq_mode);
+                gpio_irq_enable(input, (pin_irq_mode_t)input->mode.irq_mode);
             }
 
         } while(i);

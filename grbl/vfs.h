@@ -35,13 +35,41 @@
 
 #define VFS_MOUNT_PATH_LEN 33
 
+#include <errno.h>
+
+// Some C libraries (IAR DLIB) define only the ISO C error codes, the file
+// systems use these POSIX ones too.
+#ifndef EPERM
+#define EPERM   1
+#endif
+#ifndef ENOENT
+#define ENOENT  2
+#endif
+#ifndef EFAULT
+#define EFAULT  14
+#endif
+#ifndef ENOTDIR
+#define ENOTDIR 20
+#endif
+#ifndef EISDIR
+#define EISDIR  21
+#endif
+#ifndef EINVAL
+#define EINVAL  22
+#endif
+#ifndef EROFS
+#define EROFS   30
+#endif
+
 #define vfs_load_plugin(x)
 
 #ifndef bcopy
 #define bcopy(src, dest, len) memmove(dest, src, len)
 #endif
 
-#if !(defined(__time_t_defined) || defined(_TIME_H_) || defined(__MSP432P401R__) || defined(PART_TM4C123GH6PM))
+#if defined(__ICCARM__)
+#include <time.h>
+#elif !(defined(__time_t_defined) || defined(_TIME_H_) || defined(__MSP432P401R__) || defined(PART_TM4C123GH6PM))
 typedef struct {
     short date;
     short time;

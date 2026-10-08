@@ -846,12 +846,10 @@ typedef struct {
     bool servo_mode;
 } pwm_config_t;
 
-typedef union
-{
-    pwm_config_t *pwm_config;
-    gpio_in_config_t *gpio_in_config;
-    gpio_out_config_t *gpio_out_config;
-} xbar_cfg_ptr_t __attribute__ ((__transparent_union__));
+// Pointer to gpio_in_config_t, gpio_out_config_t or pwm_config_t, depending on
+// the pin type. A plain void pointer instead of a GCC transparent union, which
+// other compilers (IAR) don't support: the config handler casts it.
+typedef void *xbar_cfg_ptr_t;
 
 struct xbar;
 

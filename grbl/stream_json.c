@@ -250,7 +250,7 @@ bool json_add_real (json_out_t *json, const char *tag, real_t value, uint8_t dec
 bool json_parse_string (char *json, json_callback_ptr callback, void *data)
 {
     bool is_string, done = false;
-    char c, *s, *e, *tag, *value;
+    char *s, *e, *tag, *value;
 
     if(*(s = json) == '{' && *(++s) == '"') {
         s++;
@@ -267,7 +267,6 @@ bool json_parse_string (char *json, json_callback_ptr callback, void *data)
                         }
                     } else if((e = strchr(s, ',')) || (e = strchr(s, '}'))) {
                         value = s;
-                        c = *e;
                         *e = '\0';
                         s = e + 1;
                     }

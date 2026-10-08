@@ -49,7 +49,7 @@ bool strtotime (char *s, struct tm *time);
 char *strtoisodt (struct tm *dt);
 char *strtointernetdt (struct tm *dt);
 char *btoa (uint64_t bytes);
-#if defined(_WIN32) || defined(__MSP432P401R__) || defined(PART_TM4C123GH6PM)
+#if defined(_WIN32) || defined(__MSP432P401R__) || defined(PART_TM4C123GH6PM) || defined(__ICCARM__) // No strlcpy() in the C library.
 size_t strlcpy (char *dst, const char *src, size_t len);
 #endif
 

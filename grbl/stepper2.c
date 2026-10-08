@@ -114,6 +114,9 @@ FLASHMEM static void st2_reset (void)
         motor->state = State_Idle;
         motor = motor->next;
     }
+
+    if(on_reset)
+        on_reset();
 }
 
 /*! \brief Update basic motor configuration on settings changes.

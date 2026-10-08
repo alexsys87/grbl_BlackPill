@@ -26,7 +26,6 @@
 static uint8_t boot0_port = 0xFF, reset_port = 0xFF;
 static io_stream_t dest;
 static bool conn_ok = false;
-static on_linestate_changed_ptr on_linestate_changed;
 
 // Weak implementation of low level function to be provided by the driver
 
@@ -111,7 +110,6 @@ static void passthru_start1 (void *data)
     ioport_digital_out(boot0_port, 1);
     ioport_digital_out(reset_port, 0);
 
-    on_linestate_changed = hal.stream.on_linestate_changed;
     hal.stream.on_linestate_changed = onLinestateChanged;
 
     task_add_delayed(passthru_start2, NULL, 1250); // delay a bit to allow the USB stack to start

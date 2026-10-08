@@ -30,7 +30,7 @@
 #define N_MODBUS_API 2
 
 static uint_fast16_t n_api = 0, tcp_api = N_MODBUS_API, rtu_api = N_MODBUS_API;
-static modbus_api_t modbus[N_MODBUS_API] = {0};
+static modbus_api_t modbus[N_MODBUS_API];
 
 FLASHMEM modbus_cap_t modbus_isup (void)
 {
@@ -165,7 +165,7 @@ static void rx_exception (uint8_t code, void *context);
 static void rx_timeout (uint8_t code, void *context);
 
 PROGMEM static const modbus_function_properties_t cmds[] = {
-    { 0, false, false, false },
+    { (modbus_function_t)0, false, false, false },
     { ModBus_ReadCoils, false, false, true },
     { ModBus_ReadDiscreteInputs, false, false, true },
     { ModBus_ReadHoldingRegisters, false, false, false },
@@ -173,13 +173,13 @@ PROGMEM static const modbus_function_properties_t cmds[] = {
     { ModBus_WriteCoil, true, true, false },
     { ModBus_WriteRegister, true, true, false },
     { ModBus_ReadExceptionStatus, false, true, false },
-    { 0, true, false, false }, // ModBus_Diagnostics
-    { 0, false, false, false },
-    { 0, false, false, false },
-    { 0, false, false, false },
-    { 0, false, false, false },
-    { 0, false, false, false },
-    { 0, false, false, false },
+    { (modbus_function_t)0, true, false, false }, // ModBus_Diagnostics
+    { (modbus_function_t)0, false, false, false },
+    { (modbus_function_t)0, false, false, false },
+    { (modbus_function_t)0, false, false, false },
+    { (modbus_function_t)0, false, false, false },
+    { (modbus_function_t)0, false, false, false },
+    { (modbus_function_t)0, false, false, false },
     { ModBus_WriteCoils, true, false, true },
     { ModBus_WriteRegisters, true, false, false }
 };
@@ -198,7 +198,7 @@ static modbus_response_t response;
 
 FLASHMEM static void rx_exception (uint8_t code, void *context)
 {
-    response.exception = code;
+    response.exception = (modbus_exception_t)code;
 
     if(xcallback)
         xcallback(&response);
@@ -246,7 +246,7 @@ FLASHMEM static void rx_packet (modbus_message_t *msg)
                     response.values[idx] = modbus_read_u16(&msg->adu[pos + (idx << 1)]);
                 break;
         } else
-            response.exception = 255;
+            response.exception = (modbus_exception_t)255;
 
         if(xcallback)
             xcallback(&response);

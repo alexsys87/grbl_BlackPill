@@ -414,9 +414,9 @@ FLASHMEM static bool can_set_format (const setting_detail_t *setting, uint_fast1
 }
 
 PROGMEM static const setting_detail_t modbus_settings[] = {
-    { Settings_ModBus_BaudRate, Group_ModBus, "ModBus baud rate", NULL, Format_RadioButtons, "2400,4800,9600,19200,38400,115200", NULL, NULL, Setting_NonCoreFn, modbus_set_baud, modbus_get_baud, NULL },
+    { Settings_ModBus_BaudRate, Group_ModBus, "ModBus baud rate", NULL, Format_RadioButtons, "2400,4800,9600,19200,38400,115200", NULL, NULL, Setting_NonCoreFn, (void *)modbus_set_baud, (void *)modbus_get_baud, NULL },
     { Settings_ModBus_RXTimeout, Group_ModBus, "ModBus RX timeout", "milliseconds", Format_Integer, "####0", "50", "250", Setting_NonCore, &modbus.rx_timeout, NULL, NULL },
-    { Setting_ModBus_StreamFormat, Group_ModBus, "ModBus serial format", NULL, Format_RadioButtons, "8-bit no parity, 8-bit even parity, 8-bit odd parity", NULL, NULL, Setting_NonCoreFn, modbus_set_format, modbus_get_format, can_set_format }
+    { Setting_ModBus_StreamFormat, Group_ModBus, "ModBus serial format", NULL, Format_RadioButtons, "8-bit no parity, 8-bit even parity, 8-bit odd parity", NULL, NULL, Setting_NonCoreFn, (void *)modbus_set_format, (void *)modbus_get_format, can_set_format }
 };
 
 FLASHMEM static void modbus_settings_save (void)
@@ -592,7 +592,7 @@ FLASHMEM void modbus_rtu_init (int8_t instance, int8_t dir_aux)
         if(stream.set_direction == NULL && dir_aux != -2) {
 
             xbar_t *dir_pin; // TODO: move to top and use for direct access
-            io_port_cfg_t d_out;
+            io_port_cfg_t d_out = {0};
 
             ioports_cfg(&d_out, Port_Digital, Port_Output);
 

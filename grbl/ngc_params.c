@@ -1107,7 +1107,7 @@ FLASHMEM static status_code_t macro_set_get_setting (parameter_words_t args)
         if(args.s && is_numeric) {
             float new_value;
             if(ngc_param_get(19 /* S word */, &new_value))
-                status = settings_store_setting(setting->id + offset, setting->datatype == Format_Decimal ? ftoa(new_value, 6) : uitoa((uint32_t)new_value));
+                status = settings_store_setting((setting_id_t)(setting->id + offset), setting->datatype == Format_Decimal ? ftoa(new_value, 6) : uitoa((uint32_t)new_value));
         }
 
         if(status == Status_OK) {
@@ -1257,8 +1257,10 @@ FLASHMEM static status_code_t macro_modbus_msg (parameter_words_t args)
              args.s && ngc_param_get(19 /* S word - server address */, &tmpvar)) {
             server = (uint16_t)tmpvar;
             status = modbus_message(server, p->function, address, values, n_values, modbus_response_handler);
-        } else
-            status = p->function ? Status_GcodeValueWordMissing : Status_GcodeUnsupportedCommand;
+        } else if(p->function)
+            status = Status_GcodeValueWordMissing;
+        else
+            status = Status_GcodeUnsupportedCommand;
     } else
         status = Status_GcodeUnsupportedCommand;
 

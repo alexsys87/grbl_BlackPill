@@ -145,7 +145,7 @@ static const setting_group_detail_t canbus_groups [] = {
 };
 
 static const setting_detail_t canbus_setting_detail[] = {
-    { Setting_CANbus_BaudRate, Group_CANbus, "CAN bus baud rate", NULL, Format_RadioButtons, "125000,250000,500000,1000000", NULL, NULL, Setting_NonCoreFn, canbus_set_baud, canbus_get_baud, NULL },
+    { Setting_CANbus_BaudRate, Group_CANbus, "CAN bus baud rate", NULL, Format_RadioButtons, "125000,250000,500000,1000000", NULL, NULL, Setting_NonCoreFn, (void *)canbus_set_baud, (void *)canbus_get_baud, NULL },
 };
 
 static void canbus_settings_restore (void)
