@@ -34,6 +34,9 @@ def send(text):
     for ch in text:
         cmd('sysbus.%s WriteChar 0x%02X' % (HOSTDEV, ord(ch)))
 def rt(code): cmd('sysbus.%s WriteChar 0x%02X' % (HOSTDEV, code))   # real time command
+def send2(text):                                                       # second UART (WiFi port)
+    for ch in text:
+        cmd('sysbus.usart2 WriteChar 0x%02X' % ord(ch))
 def pin(port, n, level): cmd('sysbus.gpioPort%s OnGPIO %d %s' % (port, n, 'true' if level else 'false'))
 def peek(tag, addr):
     cmd('echo "@@VAL %s"' % tag); cmd('sysbus ReadDoubleWord 0x%08X' % addr)
@@ -45,6 +48,8 @@ cmd('sysbus LoadELF @%s' % os.path.abspath(ELF))
 cmd('showAnalyzer sysbus.%s Antmicro.Renode.Analyzers.LoggingUartAnalyzer' % HOSTDEV)
 cmd('logLevel 3')
 cmd('logLevel -1 sysbus.%s' % HOSTDEV)
+cmd('showAnalyzer sysbus.usart2 Antmicro.Renode.Analyzers.LoggingUartAnalyzer')
+cmd('logLevel -1 sysbus.usart2')
 cmd('logLevel -1 sysbus.gpioPortA')
 cmd('logLevel -1 sysbus.gpioPortB')
 
@@ -114,7 +119,15 @@ mark('move400'); send('G91 G1 X1 F600\n'); run('0.6')
 send('$100=800\n'); run('0.5')
 
 # --- limit switches ------------------------------------------------------------
+# Not fitted ($450=0, the default): the input is ignored even with hard limits on.
 mark('lim_on'); send('$21=1\n'); run('0.3')
+mark('nolim_move'); send('G91 G1 X2 F600\n'); run('0.1')
+pin('B', 12, False)                             # X input low: would be a closed switch
+run('0.1')
+mark('nolim_status'); send('?'); run('0.05')
+pin('B', 12, True); run('0.3')
+# Fitted on X ($450=1): the switch stops the machine.
+mark('lim_fit'); send('$450=1\n'); run('0.3')
 mark('lim_move'); send('G91 G1 X10 F600\n'); run('0.3')
 pin('B', 12, False)                             # X switch closes
 run('0.2')
@@ -122,6 +135,27 @@ pin('B', 12, True)
 mark('lim_status'); send('?'); run('0.05')
 mark('lim_unlock'); rt(0x18); run('0.3'); send('$X\n'); run('0.1')
 mark('lim_off'); send('$21=0\n'); run('0.3')
+
+# --- second UART (USART2, e.g. WiFi) in parallel with the host port ----------
+run('0.6')                                      # host port quiet
+mark('u2_status'); send2('?'); run('0.05')
+mark('u2_cmd'); send2('G91 G1 X1 F600\n'); run('0.6')
+# The host runs a move, the WiFi port's command waits for it.
+mark('u2_busy'); send('G91 G1 X3 F300\n'); run('0.1')
+send2('$I\n'); run('0.2')
+mark('u2_wait'); run('0.05')
+mark('u2_after'); run('1.5')
+# Feed hold / cycle start from the WiFi port while the host's move runs.
+mark('u2_hold_move'); send('G91 G1 X3 F300\n'); run('0.8')
+send2('!'); run('0.3')
+mark('u2_hold_status'); send('?'); run('0.05')
+send2('~'); run('1.0')
+mark('u2_resumed'); send('?'); run('0.05')
+# An error on the WiFi port doesn't lock the host's G-code (grblHAL keeps
+# G-code locked after an error until an empty line or a reset).
+run('0.6')
+mark('u2_err'); send2('G5000\n'); run('0.6')
+mark('host_after_u2_err'); send('G91 G0 X0\n'); run('0.2')
 
 # --- probe ----------------------------------------------------------------------
 mark('probe'); send('G91 G38.2 Z-5 F120\n'); run('0.3')
@@ -177,8 +211,11 @@ for l in out.splitlines():
     if tag and m:
         vals[tag] = int(m.group(1), 16); tag = None
 
-def uart(sec):
-    return [re.sub(r'^.*\] ', '', l) for l in sections.get(sec, []) if '%s: [host' % HOSTDEV in l]
+def uart(sec, dev=HOSTDEV):
+    return [re.sub(r'^.*\] ', '', l) for l in sections.get(sec, []) if '%s: [host' % dev in l]
+
+def uart2(sec):
+    return uart(sec, 'usart2')
 
 def bsrr_writes(sec, port='A'):
     for l in sections.get(sec, []):
@@ -217,6 +254,7 @@ check('$I: settings in flash', any('[NVS STORAGE:*FLASH' in l for l in info), in
 s = uart('settings')
 check('$$: 800 steps/mm default', any(re.match(r'\$100=800\.0+$', l) for l in s), [l for l in s if l.startswith('$100')])
 check('$$: NO limit switches ($5=7)', '$5=7' in s, [l for l in s if l.startswith('$5=')])
+check('$$: no limit switches fitted ($450=0)', '$450=0' in s, [l for l in s if l.startswith('$450')])
 check('status report: Idle', status('status0').startswith('<Idle|MPos:0.000,0.000,0.000'), status('status0'))
 check('unsupported G code: error:20', 'error:20' in uart('bad'), uart('bad'))
 check('after an error: G-code blocked', any(l.startswith('error:') for l in uart('bad2')), uart('bad2'))
@@ -224,13 +262,13 @@ check('after an error: G-code blocked', any(l.startswith('error:') for l in uart
 n = pulses('move_x', 0) + pulses('status_x', 0)
 check('G1 X1: 800 X steps', n == 800, n)
 check('G1 X1: position', mpos('status_x') == (1.0, 0.0, 0.0), status('status_x'))
-ny, nz = pulses('move_yz', 2), pulses('move_yz', 4)
+ny, nz = pulses('move_yz', 6), pulses('move_yz', 4)
 check('G1 Y-0.5 Z0.25: 400 Y / 200 Z steps', (ny, nz) == (400, 200), (ny, nz))
 # grbl convention: direction output high = negative direction ($3=0).
-dirw = [v for v in bsrr_writes('move_yz') if v & ((1 << 3) | (1 << 19))]
-check('Y direction pin high (negative move)', dirw and dirw[-1] & (1 << 3), [hex(v) for v in dirw[:3]])
+dirw = [v for v in bsrr_writes('move_yz') if v & ((1 << 7) | (1 << 23))]
+check('Y direction pin (PA7) high (negative move)', dirw and dirw[-1] & (1 << 7), [hex(v) for v in dirw[:3]])
 check('position after Y/Z move', mpos('status_yz') == (1.0, -0.5, 0.25), status('status_yz'))
-nx, ny = pulses('arc', 0), pulses('arc', 2)
+nx, ny = pulses('arc', 0), pulses('arc', 6)
 check('G2 half circle: 1600 X / ~1600 Y steps', nx == 1600 and abs(ny - 1600) <= 4, (nx, ny))
 check('G2 end position', mpos('status_arc') == (2.0, 0.0, 0.0), status('status_arc'))
 
@@ -260,10 +298,31 @@ check('settings written to flash sector 1', vals.get('nvs', 0xFFFFFFFF) != 0xFFF
 n = pulses('move400', 0)
 check('G1 X1 with 400 steps/mm: 400 steps', n == 400, n)
 
+ns = status('nolim_status')
+check('$450=0: limit input ignored (no alarm, no Pn:X)', ns.startswith('<Run') and 'Pn:X' not in ns and
+      not any(l.startswith('ALARM') for l in uart('nolim_move') + uart('nolim_status')), ns)
+check('$450=1: ok', 'ok' in uart('lim_fit'), uart('lim_fit'))
 ls = status('lim_status')
 check('hard limit: alarm', ls.startswith('<Alarm'), ls + ' ' + ' '.join(uart('lim_move')))
 check('hard limit: ALARM:1 reported', any(l.startswith('ALARM:1') for l in uart('lim_move') + uart('lim_status')),
       uart('lim_move'))
+
+u2s = uart2('u2_status')
+check('USART2: status report on "?"', any(l.startswith('<Idle') for l in u2s), u2s)
+check('USART2: command runs, ok to USART2 only', 'ok' in uart2('u2_cmd') and 'ok' not in uart('u2_cmd') and
+      pulses('u2_cmd', 0) == 800, (uart2('u2_cmd'), uart('u2_cmd'), pulses('u2_cmd', 0)))
+check('USART2: waits while the host move runs', not any('[BOARD' in l for l in uart2('u2_busy') + uart2('u2_wait')),
+      uart2('u2_busy') + uart2('u2_wait'))
+after = uart2('u2_after')
+check('USART2: answered after the move', any('[BOARD:CNC 3018 BlackPill]' in l for l in after) and 'ok' in after, after)
+check('host: no answers of USART2 commands', not any('[BOARD' in l for l in uart('u2_busy') + uart('u2_wait') + uart('u2_after')),
+      uart('u2_after'))
+check('host: ok for its move', 'ok' in uart('u2_busy'), uart('u2_busy'))
+check('USART2: feed hold (!) holds the host move', status('u2_hold_status').startswith('<Hold'), status('u2_hold_status'))
+check('USART2: cycle start (~) resumes', status('u2_resumed').startswith('<Idle'), status('u2_resumed'))
+check('USART2: error answered on USART2', any(l.startswith('error:') for l in uart2('u2_err')), uart2('u2_err'))
+check('host: not locked by the USART2 error', 'ok' in uart('host_after_u2_err') and
+      not any(l.startswith('error') for l in uart('host_after_u2_err')), uart('host_after_u2_err'))
 
 pr = uart('probe') + uart('probe_done')
 check('G38.2: probe result [PRB:...:1]', any(re.match(r'\[PRB:.*:1\]', l) for l in pr), pr)

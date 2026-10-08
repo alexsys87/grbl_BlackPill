@@ -68,6 +68,23 @@
 #define CONTROL_ENABLE (CONTROL_HALT|CONTROL_FEED_HOLD|CONTROL_CYCLE_START)
 #endif
 
+#ifndef UART1_ENABLE
+#define UART1_ENABLE 1
+#endif
+#ifndef UART2_ENABLE
+#define UART2_ENABLE 1
+#endif
+#ifndef UART1_BAUD_RATE
+#define UART1_BAUD_RATE BAUD_RATE
+#endif
+#ifndef UART2_BAUD_RATE
+#define UART2_BAUD_RATE BAUD_RATE
+#endif
+
+#ifndef DEFAULT_LIMIT_SWITCHES_FITTED
+#define DEFAULT_LIMIT_SWITCHES_FITTED 0
+#endif
+
 #ifdef BOARD_CNC3018_BLACKPILL
 #include "boards/cnc3018_blackpill_map.h"
 #else
@@ -191,9 +208,13 @@ bool aux_out_claim_explicit (aux_ctrl_out_t *aux_ctrl);
 bool memcpy_from_flash (uint8_t *dest);
 bool memcpy_to_flash (uint8_t *source);
 
-/* serial.c / usb_cdc.c */
+/* serial.c / usb_cdc.c / stream_mux.c */
+#define N_UARTS 2       // USART1, USART2
+
 void serialRegisterStreams (void);
+const io_stream_t *serialOpen (uint8_t instance, uint32_t baud_rate);
 const io_stream_t *usbInit (void);
+bool stream_mux_connect (const io_stream_t *const *port, uint_fast8_t n);
 
 /* cpu.c */
 typedef enum {

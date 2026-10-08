@@ -173,6 +173,7 @@ public static class GrblCodes
         [344] = ("Tool change search seek rate", "Скорость поиска зонда", "mm/min"),
         [384] = ("Disable G92 persistence", "Не сохранять G92", "bool"),
         [395] = ("Default spindle", "Шпиндель по умолчанию", "enum"),
+        [450] = ("Limit switches fitted (axis mask)", "Установлены концевики (маска осей)", "mask"),
     };
 
     public static string Error(int code, bool russian)
