@@ -52,6 +52,38 @@ public sealed class ToolpathViewport : Border
         nameof(BedDepth), typeof(double), typeof(ToolpathViewport),
         new PropertyMetadata(180.0, (d, _) => ((ToolpathViewport)d).BuildBed()));
 
+    public static readonly DependencyProperty HeightMapProperty = DependencyProperty.Register(
+        nameof(HeightMap), typeof(HeightMap), typeof(ToolpathViewport),
+        new PropertyMetadata(null, (d, _) => ((ToolpathViewport)d).BuildHeightMap()));
+
+    public static readonly DependencyProperty HeightMapVersionProperty = DependencyProperty.Register(
+        nameof(HeightMapVersion), typeof(int), typeof(ToolpathViewport),
+        new PropertyMetadata(0, (d, _) => ((ToolpathViewport)d).BuildHeightMap()));
+
+    public static readonly DependencyProperty ShowHeightMapProperty = DependencyProperty.Register(
+        nameof(ShowHeightMap), typeof(bool), typeof(ToolpathViewport),
+        new PropertyMetadata(true, (d, _) => ((ToolpathViewport)d).BuildHeightMap()));
+
+    /// <summary>Probed surface, drawn over the work area (heights to scale, colored low blue … high red).</summary>
+    public HeightMap? HeightMap
+    {
+        get => (HeightMap?)GetValue(HeightMapProperty);
+        set => SetValue(HeightMapProperty, value);
+    }
+
+    /// <summary>Changes when points of the map were probed: draw it again.</summary>
+    public int HeightMapVersion
+    {
+        get => (int)GetValue(HeightMapVersionProperty);
+        set => SetValue(HeightMapVersionProperty, value);
+    }
+
+    public bool ShowHeightMap
+    {
+        get => (bool)GetValue(ShowHeightMapProperty);
+        set => SetValue(ShowHeightMapProperty, value);
+    }
+
     public Toolpath? Toolpath
     {
         get => (Toolpath?)GetValue(ToolpathProperty);
@@ -113,6 +145,7 @@ public sealed class ToolpathViewport : Border
     private readonly Model3DGroup _cutGroup = new();
     private readonly Model3DGroup _rapidGroup = new();
     private readonly Model3DGroup _partialGroup = new();
+    private readonly Model3DGroup _mapGroup = new();
     private readonly GeometryModel3D _tool;
     private readonly TranslateTransform3D _toolTransform = new();
     private readonly Material _pathMaterial;
@@ -171,6 +204,7 @@ public sealed class ToolpathViewport : Border
         root.Children.Add(_cutGroup);
         root.Children.Add(_rapidGroup);
         root.Children.Add(_partialGroup);
+        root.Children.Add(_mapGroup);
         _viewport.Camera = _camera;
         _viewport.Children.Add(new ModelVisual3D { Content = root });
         Child = _viewport;
@@ -350,6 +384,82 @@ public sealed class ToolpathViewport : Border
             _bedGroup.Children.Add(_tool);
         else if (!ShowTool && inScene)
             _bedGroup.Children.Remove(_tool);
+    }
+
+    // ---------------------------------------------------------------- height map
+
+    private void BuildHeightMap()
+    {
+        _mapGroup.Children.Clear();
+        var map = HeightMap;
+        if (map == null || !ShowHeightMap)
+            return;
+
+        // Surface: the interpolation over the probed part, a few cells per grid
+        // step; the texture coordinate carries the height for the color.
+        double min = map.Min, max = map.Max;
+        double range = Math.Max(max - min, 1e-6);
+        if (map.ProbedCount >= map.PointsX * map.PointsY)
+        {
+            const int sub = 4;
+            int nx = (map.PointsX - 1) * sub + 1, ny = (map.PointsY - 1) * sub + 1;
+            var mesh = new MeshGeometry3D();
+            for (int j = 0; j < ny; j++)
+            {
+                for (int i = 0; i < nx; i++)
+                {
+                    double x = map.X + map.Width * i / (nx - 1), y = map.Y + map.Height * j / (ny - 1);
+                    double z = map.At(x, y);
+                    mesh.Positions.Add(new Point3D(x, y, z));
+                    mesh.TextureCoordinates.Add(new Point((z - min) / range, 0.5));
+                }
+            }
+            for (int j = 0; j < ny - 1; j++)
+            {
+                for (int i = 0; i < nx - 1; i++)
+                {
+                    int a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
+                    mesh.TriangleIndices.Add(a); mesh.TriangleIndices.Add(b); mesh.TriangleIndices.Add(d);
+                    mesh.TriangleIndices.Add(a); mesh.TriangleIndices.Add(d); mesh.TriangleIndices.Add(c);
+                }
+            }
+            var gradient = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0.5),
+                EndPoint = new Point(1, 0.5),
+                Opacity = 0.55,
+            };
+            gradient.GradientStops.Add(new GradientStop(Color.FromRgb(0x25, 0x63, 0xEB), 0));
+            gradient.GradientStops.Add(new GradientStop(Color.FromRgb(0x22, 0xC5, 0x5E), 0.5));
+            gradient.GradientStops.Add(new GradientStop(Color.FromRgb(0xEF, 0x44, 0x44), 1));
+            gradient.Freeze();
+            var material = new DiffuseMaterial(gradient);
+            material.Freeze();
+            _mapGroup.Children.Add(new GeometryModel3D(mesh, material) { BackMaterial = material });
+        }
+
+        // Points: probed ones as small cubes at their height, the rest flat
+        // and grey at Z 0.
+        var done = new MeshGeometry3D();
+        var todo = new MeshGeometry3D();
+        const double r = 0.6;
+        for (int i = 0; i < map.PointsX; i++)
+        {
+            for (int j = 0; j < map.PointsY; j++)
+            {
+                double x = map.PointX(i), y = map.PointY(j), z = map[i, j];
+                if (double.IsNaN(z))
+                    ToolpathMesh.AddBox(todo, new Point3D(x - r, y - r, -0.05), new Point3D(x + r, y + r, 0.05));
+                else
+                    ToolpathMesh.AddBox(done, new Point3D(x - r, y - r, z - r), new Point3D(x + r, y + r, z + r));
+            }
+        }
+        var doneMat = ToolpathMesh.Solid(Color.FromRgb(0xF5, 0x9E, 0x0B));
+        var todoMat = ToolpathMesh.Solid(Color.FromRgb(0x9C, 0xA3, 0xAF));
+        if (done.Positions.Count > 0)
+            _mapGroup.Children.Add(new GeometryModel3D(done, doneMat) { BackMaterial = doneMat });
+        if (todo.Positions.Count > 0)
+            _mapGroup.Children.Add(new GeometryModel3D(todo, todoMat) { BackMaterial = todoMat });
     }
 
     // ---------------------------------------------------------------- toolpath

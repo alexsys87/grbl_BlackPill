@@ -22,6 +22,16 @@
     WindowCornerPreference="Round"
     WindowStartupLocation="CenterScreen">
 
+    <ui:FluentWindow.InputBindings>
+        <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenFileCommand}" />
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveProgramAsCommand}" />
+        <KeyBinding Key="E" Modifiers="Control" Command="{Binding EditProgramCommand}" />
+        <KeyBinding Key="F5" Command="{Binding StartJobCommand}" />
+        <KeyBinding Key="F6" Command="{Binding PauseCommand}" />
+        <KeyBinding Key="F7" Command="{Binding ResumeCommand}" />
+        <KeyBinding Key="H" Modifiers="Control" Command="{Binding HomeCommand}" />
+    </ui:FluentWindow.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -222,6 +232,12 @@
                             <TextBlock Text="{DynamicResource S.TabControl}" Style="{StaticResource TabText}" />
                         </StackPanel>
                     </ListBoxItem>
+                    <ListBoxItem ToolTip="{DynamicResource S.TabMapTip}">
+                        <StackPanel>
+                            <ui:SymbolIcon Symbol="Grid24" Style="{StaticResource TabIcon}" />
+                            <TextBlock Text="{DynamicResource S.TabMap}" Style="{StaticResource TabText}" />
+                        </StackPanel>
+                    </ListBoxItem>
                     <ListBoxItem ToolTip="{DynamicResource S.TabSettingsTip}">
                         <StackPanel>
                             <ui:SymbolIcon Symbol="Settings24" Style="{StaticResource TabIcon}" />
@@ -238,8 +254,9 @@
                 <Grid Grid.Row="1" Margin="0,8,0,0">
                     <v:JobPanel Visibility="{Binding SelectedIndex, ElementName=LeftTabs, Converter={StaticResource IndexToVisibility}, ConverterParameter=0}" />
                     <v:ControlPanel Visibility="{Binding SelectedIndex, ElementName=LeftTabs, Converter={StaticResource IndexToVisibility}, ConverterParameter=1}" />
-                    <v:SettingsPanel Visibility="{Binding SelectedIndex, ElementName=LeftTabs, Converter={StaticResource IndexToVisibility}, ConverterParameter=2}" />
-                    <v:ToolsPanel Visibility="{Binding SelectedIndex, ElementName=LeftTabs, Converter={StaticResource IndexToVisibility}, ConverterParameter=3}" />
+                    <v:HeightMapPanel Visibility="{Binding SelectedIndex, ElementName=LeftTabs, Converter={StaticResource IndexToVisibility}, ConverterParameter=2}" />
+                    <v:SettingsPanel Visibility="{Binding SelectedIndex, ElementName=LeftTabs, Converter={StaticResource IndexToVisibility}, ConverterParameter=3}" />
+                    <v:ToolsPanel Visibility="{Binding SelectedIndex, ElementName=LeftTabs, Converter={StaticResource IndexToVisibility}, ConverterParameter=4}" />
                 </Grid>
             </Grid>
 

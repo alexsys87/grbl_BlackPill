@@ -236,7 +236,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (IsVirtualSelected)
             {
                 Log(LogKind.Info, Loc.F("S.Log.ConnectingVirtual", VirtualTimeScale));
-                _conn.Connect(new VirtualGrbl { TimeScale = VirtualTimeScale, ProbePlateZ = -25 });
+                // The stock of the virtual machine is a little tilted and wavy (a few
+                // tenths of a mm), so a height map shows something.
+                _conn.Connect(new VirtualGrbl
+                {
+                    TimeScale = VirtualTimeScale,
+                    ProbePlateZ = -25,
+                    ProbeSurface = (x, y) => -25 + 0.002 * x - 0.0015 * y + 0.15 * Math.Sin(x / 25) * Math.Cos(y / 20),
+                });
             }
             else if (IsNetworkSelected)
             {

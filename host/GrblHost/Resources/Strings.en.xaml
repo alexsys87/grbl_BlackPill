@@ -264,4 +264,65 @@
     <sys:String x:Key="S.Log.SettingsWritten">Settings written: {0}</sys:String>
     <sys:String x:Key="S.Log.CommandError">{0}: error:{1} — {2}</sys:String>
     <sys:String x:Key="S.Log.EstimateOld">The time estimate was made before the machine settings were read, reload the file for an exact one</sys:String>
+    <sys:String x:Key="S.TabMap">Map</sys:String>
+    <sys:String x:Key="S.TabMapTip">Height map of the stock: probe it and let the program follow it (as in Candle)</sys:String>
+    <sys:String x:Key="S.Map.Title">Height map</sys:String>
+    <sys:String x:Key="S.Map.Area">Area (work coordinates, mm)</sys:String>
+    <sys:String x:Key="S.Map.Width">Width</sys:String>
+    <sys:String x:Key="S.Map.Height">Height</sys:String>
+    <sys:String x:Key="S.Map.PointsX">Points in X</sys:String>
+    <sys:String x:Key="S.Map.PointsY">Points in Y</sys:String>
+    <sys:String x:Key="S.Map.FromProgram">From program</sys:String>
+    <sys:String x:Key="S.Map.FromProgramTip">The area of the loaded program's cuts, points about 10 mm apart</sys:String>
+    <sys:String x:Key="S.Map.Step">Step {0:0.##} × {1:0.##} mm, {2} points</sys:String>
+    <sys:String x:Key="S.Map.Probing">Probing</sys:String>
+    <sys:String x:Key="S.Map.SafeZ">Travel Z</sys:String>
+    <sys:String x:Key="S.Map.ProbeZ">Probe to Z</sys:String>
+    <sys:String x:Key="S.Map.Probe">Probe map</sys:String>
+    <sys:String x:Key="S.Map.ProbeHint">First zero X, Y and roughly Z on the stock and connect the probe (clip on the bit, contact on the stock). At every point: up to the travel Z, G38.2 down to &quot;Probe to Z&quot;. No touch: an alarm, probing stops.</sys:String>
+    <sys:String x:Key="S.Map.None">No height map</sys:String>
+    <sys:String x:Key="S.Map.Empty">Not probed, {0} points</sys:String>
+    <sys:String x:Key="S.Map.Status">{0} of {1} points probed, Z {2:0.###} … {3:0.###} (range {4:0.###} mm)</sys:String>
+    <sys:String x:Key="S.Map.Done">Height map probed.</sys:String>
+    <sys:String x:Key="S.Map.NotComplete">Probe or open a complete height map first</sys:String>
+    <sys:String x:Key="S.Map.Outside">The program leaves the height map area: beyond its edge the height of the border points continues</sys:String>
+    <sys:String x:Key="S.Map.Use">Use</sys:String>
+    <sys:String x:Key="S.Map.Apply">Let the program follow the height map</sys:String>
+    <sys:String x:Key="S.Map.Segment">Segment, mm</sys:String>
+    <sys:String x:Key="S.Map.Bicubic">Bicubic</sys:String>
+    <sys:String x:Key="S.Map.BicubicTip">A smooth surface through all points; off: bilinear between neighbouring points</sys:String>
+    <sys:String x:Key="S.Map.Show">Show the map in 3D</sys:String>
+    <sys:String x:Key="S.Map.Clear">Clear</sys:String>
+    <sys:String x:Key="S.Map.SaveLeveled">Save leveled…</sys:String>
+    <sys:String x:Key="S.Map.SaveLeveledTip">Save the program with the height map applied (for another sender)</sys:String>
+    <sys:String x:Key="S.Map.UseHint">Every move is split into pieces no longer than the segment, arcs into chords, and the surface height is added to Z. The map is saved as a .map text file.</sys:String>
+    <sys:String x:Key="S.Map.OpenTitle">Open a height map</sys:String>
+    <sys:String x:Key="S.Map.SaveTitle">Save the height map</sys:String>
+    <sys:String x:Key="S.Map.Filter">Height map (*.map)|*.map|All files (*.*)|*.*</sys:String>
+    <sys:String x:Key="S.Map.Suffix" xml:space="preserve"> (height map)</sys:String>
+    <sys:String x:Key="S.Ask.MapProbe">Probe the height map: {0} points.
+
+Is the probe connected and X/Y/Z zeroed on the stock? Travel at Z {1}, probing down to Z {2}.</sys:String>
+    <sys:String x:Key="S.Log.MapStarted">Probing the height map: {0} points</sys:String>
+    <sys:String x:Key="S.Log.MapAborted">Height map probing stopped: {0} of {1} points</sys:String>
+    <sys:String x:Key="S.Log.MapOpened">Height map {0}.</sys:String>
+    <sys:String x:Key="S.RecentMaps">Recent maps</sys:String>
+    <sys:String x:Key="S.RecentFiles">Recent files</sys:String>
+    <sys:String x:Key="S.SaveEllipsis">Save…</sys:String>
+    <sys:String x:Key="S.SaveAsEllipsis">Save as…</sys:String>
+    <sys:String x:Key="S.SaveDialogTitle">Save the program</sys:String>
+    <sys:String x:Key="S.EditProgram">Edit</sys:String>
+    <sys:String x:Key="S.EditProgramTip">Edit the program (Ctrl+E)</sys:String>
+    <sys:String x:Key="S.ApplyEdit">Apply</sys:String>
+    <sys:String x:Key="S.ApplyEditTip">Rebuild the toolpath from the edited text</sys:String>
+    <sys:String x:Key="S.Cancel">Cancel</sys:String>
+    <sys:String x:Key="S.NewProgramName">new.nc</sys:String>
+    <sys:String x:Key="S.Notice.SaveFailed">Could not save</sys:String>
+    <sys:String x:Key="S.Notice.FileGone">The file is gone: {0}</sys:String>
+    <sys:String x:Key="S.Log.Saved">Saved: {0}</sys:String>
+    <sys:String x:Key="S.JogContinuous">Continuous</sys:String>
+    <sys:String x:Key="S.JogContinuousTip">The machine moves while the button or key is held and stops on release. With soft limits ($20=1) set $40=1 so the jog is clipped to them</sys:String>
+    <sys:String x:Key="S.KeyboardJog">Keyboard</sys:String>
+    <sys:String x:Key="S.KeyboardJogTip">Arrows: X/Y, Page Up/Down: Z; keypad: 4 6 8 2 X/Y, 9 3 Z, 7 1 diagonals, + − the step, 5 or Esc stop</sys:String>
+    <sys:String x:Key="S.SpindleApplyTip">Set the speed of the running spindle (S)</sys:String>
 </ResourceDictionary>

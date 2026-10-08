@@ -15,8 +15,19 @@
             <DockPanel Margin="0,0,0,6">
                 <ui:SymbolIcon Symbol="Code24" Margin="0,0,6,0" />
                 <TextBlock Text="{DynamicResource S.GCode}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right" Style="{StaticResource Label}"
-                           Text="{Binding CurrentLineNumberText}" />
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right"
+                            Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}">
+                    <ui:Button Padding="8,3" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}" Content="{DynamicResource S.ApplyEdit}"
+                               Command="{Binding ApplyEditCommand}" ToolTip="{DynamicResource S.ApplyEditTip}" />
+                    <ui:Button Padding="8,3" Margin="4,0,0,0" Icon="{ui:SymbolIcon Dismiss24}" Content="{DynamicResource S.Cancel}"
+                               Command="{Binding CancelEditCommand}" />
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right"
+                            Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}">
+                    <TextBlock Style="{StaticResource Label}" Text="{Binding CurrentLineNumberText}" Margin="0,0,6,0" />
+                    <ui:Button Padding="6,3" Appearance="Transparent" Icon="{ui:SymbolIcon Edit24}"
+                               Command="{Binding EditProgramCommand}" ToolTip="{DynamicResource S.EditProgramTip}" />
+                </StackPanel>
             </DockPanel>
 
             <!-- The command being executed, big -->
@@ -26,6 +37,13 @@
                            FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
                            Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
             </Border>
+
+            <!-- Editor: the program as text, applied with the button above -->
+            <TextBox Grid.Row="2" Text="{Binding EditText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" AcceptsTab="True"
+                     TextWrapping="NoWrap" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                     VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                     VerticalContentAlignment="Top" Panel.ZIndex="1"
+                     Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}" />
 
             <ListBox x:Name="Lines" Grid.Row="2" ItemsSource="{Binding GCodeLines}"
                      VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"

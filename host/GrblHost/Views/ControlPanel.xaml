@@ -161,6 +161,12 @@
                                       SmallChange="50" MaxDecimalPlaces="0" ClearButtonEnabled="False"
                                       SpinButtonPlacementMode="Hidden" />
                     </Grid>
+                    <WrapPanel Margin="0,6,0,0">
+                        <CheckBox Content="{DynamicResource S.JogContinuous}" IsChecked="{Binding JogContinuous}" MinWidth="0"
+                                  Margin="0,0,12,0" ToolTip="{DynamicResource S.JogContinuousTip}" />
+                        <CheckBox Content="{DynamicResource S.KeyboardJog}" IsChecked="{Binding KeyboardJog}" MinWidth="0"
+                                  ToolTip="{DynamicResource S.KeyboardJogTip}" />
+                    </WrapPanel>
                     <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{DynamicResource S.JogHint}" />
 
                     <WrapPanel Margin="0,8,0,0">
@@ -187,6 +193,16 @@
                         <ui:NumberBox Grid.Column="1" Value="{Binding SpindleRpm, Mode=TwoWay}" Minimum="0" Maximum="100000"
                                       SmallChange="500" MaxDecimalPlaces="0" ClearButtonEnabled="False"
                                       SpinButtonPlacementMode="Compact" />
+                    </Grid>
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Slider Minimum="0" Maximum="{Binding SpindleMax}" Value="{Binding SpindleRpm, Mode=TwoWay}"
+                                SmallChange="100" LargeChange="1000" VerticalAlignment="Center" />
+                        <ui:Button Grid.Column="1" Margin="8,0,0,0" Padding="8,4" Content="S" Command="{Binding SpindleApplyCommand}"
+                                   ToolTip="{DynamicResource S.SpindleApplyTip}" />
                     </Grid>
                     <WrapPanel Margin="0,8,0,0">
                         <ui:Button Style="{StaticResource SmallButton}" Icon="{ui:SymbolIcon ArrowClockwise24}" Content="M3"

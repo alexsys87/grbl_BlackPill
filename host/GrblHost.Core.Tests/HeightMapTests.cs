@@ -139,6 +139,32 @@ public class HeightMapTests
     }
 
     [Fact]
+    public void LeveledDemoProgramKeepsItsShape()
+    {
+        var program = GCodeDocument.FromText("demo", DemoGCode.Generate()).Lines;
+        var m = new HeightMap(-10, -10, 80, 60, 5, 4);
+        for (int i = 0; i < 5; i++)
+            for (int j = 0; j < 4; j++)
+                m[i, j] = 0.02 * i - 0.03 * j;
+        var leveled = HeightMapApplier.Apply(program, m, 2);
+
+        var a = ToolpathBuilder.Build(program);
+        var b = ToolpathBuilder.Build(leveled);
+        Assert.Equal(a.UnsupportedLines.Count, b.UnsupportedLines.Count);
+        Assert.InRange(b.CutLength, a.CutLength * 0.995, a.CutLength * 1.01);
+        Assert.Equal(a.Min.X, b.Min.X, 1);
+        Assert.Equal(a.Max.Y, b.Max.Y, 1);
+        Assert.All(leveled, l => Assert.True(l.Length < GrblConnection.MaxLineLength, l));
+        // Every feed move follows the surface: Z minus the map is a depth of the
+        // original (up to the ramp at the end, whose Z changes along the move).
+        var depths = a.Segments.Where(s => s.Kind == MoveKind.Feed).Select(s => Math.Round(s.End.Z, 2)).ToHashSet();
+        int ramp = leveled.IndexOf("(ramp line)");
+        Assert.True(ramp > 0);
+        foreach (var s in b.Segments.Where(s => s.Kind == MoveKind.Feed && s.Feature != FeatureType.Plunge && s.Line < ramp))
+            Assert.Contains(Math.Round(s.End.Z - m.At(s.End.X, s.End.Y), 2), depths);
+    }
+
+    [Fact]
     public void ApplierPassesWhatItCannotFollow()
     {
         var m = Plane((x, y) => 0.1);
