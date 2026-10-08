@@ -176,11 +176,10 @@ typedef struct {
     ioport_register_interrupt_handler_ptr register_interrupt_handler;
 } io_port_t;
 
-typedef union {
-    control_signals_t *control;
-    coolant_state_t *coolant;
-    limit_signals_t *limits;
-} driver_caps_t __attribute__ ((__transparent_union__));
+// Pointer to control_signals_t, coolant_state_t or limit_signals_t (or NULL).
+// A plain void pointer instead of a GCC transparent union, which other
+// compilers (IAR) don't support.
+typedef void *driver_caps_t;
 
 typedef union {
     uint8_t io;

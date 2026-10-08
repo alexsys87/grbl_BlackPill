@@ -543,7 +543,7 @@ bool protocol_exec_rt_system (void)
             if(alarm) {
                 hal.stream.reset_read_buffer();
                 system_raise_alarm(alarm);
-                grbl.report.feedback_message(alarm == Alarm_EStop ? Message_EStop : Alarm_MotorFault);
+                grbl.report.feedback_message(alarm == Alarm_EStop ? Message_EStop : Message_MotorFault);
             }
 
             if(!killed) // Tell driver/plugins about reset.

@@ -143,10 +143,14 @@ inline static bool motion_is_lasercut (motion_mode_t motion)
     return motion == MotionMode_Linear || motion == MotionMode_CwArc || motion == MotionMode_CcwArc || motion == MotionMode_CubicSpline || motion == MotionMode_QuadraticSpline;
 }
 
+#if NGC_EXPRESSIONS_ENABLE
+
 inline static bool no_word_value (char letter)
 {
     return letter == '\0' || (letter >= 'A' && letter <= 'Z') || letter == '$';
 }
+
+#endif
 
 parser_state_t *gc_get_state (void)
 {
@@ -2553,7 +2557,7 @@ status_code_t gc_execute_block (char *block)
                     RETURN(Status_GcodeValueOutOfRange);
                 gc_block.output_command.is_digital = true;
                 gc_block.output_command.port = (uint8_t)gc_block.values.p;
-                gc_block.output_command.value = port_command == 62 || port_command == 64 ? 1.0f : 0.0f;
+                gc_block.output_command.value = port_command == 62 || port_command == 64 ? 1 : 0;
                 gc_block.words.p = Off;
                 break;
 
@@ -2601,7 +2605,7 @@ status_code_t gc_execute_block (char *block)
                     RETURN(Status_GcodeRPMOutOfRange);
                 gc_block.output_command.is_digital = false;
                 gc_block.output_command.port = (uint8_t)gc_block.values.e;
-                gc_block.output_command.value = gc_block.values.q;
+                gc_block.output_command.value = (int32_t)gc_block.values.q;
                 gc_block.words.e = gc_block.words.q = Off;
             break;
         }
@@ -3025,7 +3029,8 @@ status_code_t gc_execute_block (char *block)
             // [G10 L0 Errors]:  No tool table or tool in spindle.
             // [G10 L1, L10, L11 Errors]: P must be 0 to grbl.tool_table.n_tools. Axis words or R word missing.
 
-            uint8_t p_value = 0;
+            uint8_t p_value;    // No initializer: the switch jumps past it to the next cases.
+            p_value = 0;
 
             if(gc_block.values.l > 0) {
 
@@ -3858,7 +3863,7 @@ status_code_t gc_execute_block (char *block)
                     if((gc_block.words.mask & ij_words.mask) != ij_words.mask)
                         RETURN(Status_GcodeValueWordMissing); // [I or J are unspecified]
 
-                    if(gc_block.values.ijk[I_VALUE] == 0.0f && gc_block.values.ijk[I_VALUE] == 0.0f)
+                    if(gc_block.values.ijk[I_VALUE] == 0.0f && gc_block.values.ijk[J_VALUE] == 0.0f)
                         RETURN(Status_GcodeValueOutOfRange); // [I or J are zero]
 
                     // Convert I and J values to proper units.
@@ -4315,7 +4320,8 @@ status_code_t gc_execute_block (char *block)
 
         case ModalState_Save:
         case ModalState_SaveAutoRestore:;
-            gc_override_values_t override = {
+            gc_override_values_t override;  // No initializer: the switch jumps past it to the next cases.
+            override = (gc_override_values_t){
                 .feed_rate = sys.override.feed_rate,
                 .rapid_rate = sys.override.rapid_rate,
             };
@@ -4867,7 +4873,8 @@ status_code_t gc_execute_block (char *block)
             case MotionMode_CannedCycle83:
             case MotionMode_CannedCycle84:;
 
-                overrides_t overrides = {};
+                overrides_t overrides;  // No initializer: the switch jumps past it to the next cases.
+                memset(&overrides, 0, sizeof(overrides_t));
 
                 if(gc_state.modal.motion == MotionMode_CannedCycle84)
                     override_disable(&plan_data.spindle, spindle_id, (gc_override_flags_t){ .feed_hold = On, .feed_rates = On, .spindle_rpm = On }, &overrides);
@@ -4890,7 +4897,7 @@ status_code_t gc_execute_block (char *block)
                     probe_id_t probe_id = Probe_Default; // initialized to shut up compiler warning
                     plan_data.condition.no_feed_override = !settings.probe.allow_feed_override;
                     if(gc_block.select_probe){
-                        if((gc_block.select_probe = (probe_id_t)gc_block.values.p != (probe_id = hal.probe.get_state().probe_id))) {
+                        if((gc_block.select_probe = (probe_id_t)gc_block.values.p != (probe_id = (probe_id_t)hal.probe.get_state().probe_id))) {
                             hal.probe.select((probe_id_t)gc_block.values.p);
                             report_add_realtime(Report_ProbeId);
                         }

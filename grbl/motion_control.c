@@ -336,17 +336,17 @@ status_code_t mc_arc (float *target, plan_line_data_t *pl_data, float *position,
 
             if (count < N_ARC_CORRECTION) {
                 // Apply vector rotation matrix.
-                r_axisi = rv.x * sin_T + rv.y * cos_T;
-                rv.x = rv.x * cos_T - rv.y * sin_T;
-                rv.y = r_axisi;
+                r_axisi = (float)(rv.x * (double)sin_T + rv.y * (double)cos_T);
+                rv.x = rv.x * (double)cos_T - rv.y * (double)sin_T;
+                rv.y = (double)r_axisi;
                 count++;
             } else {
                 // Arc correction to radius vector. Computed only every N_ARC_CORRECTION increments.
                 // Compute exact location by applying transformation matrix from initial radius vector(=-offset).
                 cos_Ti = cosf(i * theta_per_segment);
                 sin_Ti = sinf(i * theta_per_segment);
-                rv.x = -offset.x * cos_Ti + offset.y * sin_Ti;
-                rv.y = -offset.x * sin_Ti - offset.y * cos_Ti;
+                rv.x = (double)(-offset.x * cos_Ti + offset.y * sin_Ti);
+                rv.y = (double)(-offset.x * sin_Ti - offset.y * cos_Ti);
                 count = 0;
             }
 

@@ -533,7 +533,7 @@ uint_fast8_t bit_count (uint32_t bits);
 
 void dummy_handler (void);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__ICCARM__) // No ffs() in the C library.
 
 static inline int ffs (int i)
 {

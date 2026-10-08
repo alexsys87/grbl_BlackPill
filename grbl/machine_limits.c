@@ -330,7 +330,7 @@ FLASHMEM static bool homing_cycle (axes_signals_t cycle, axes_signals_t auto_squ
         float fail_distance = (-settings.homing.dual_axis.fail_length_percent / 100.0f) * settings.axis[dual_motor_axis].max_travel;
         fail_distance = min(fail_distance, settings.homing.dual_axis.fail_distance_max);
         fail_distance = max(fail_distance, settings.homing.dual_axis.fail_distance_min);
-        autosquare_fail_distance = truncf(fail_distance * settings.axis[dual_motor_axis].steps_per_mm);
+        autosquare_fail_distance = (int32_t)truncf(fail_distance * settings.axis[dual_motor_axis].steps_per_mm);
     }
 
     if(settings.status_report.when_homing)
@@ -519,7 +519,7 @@ FLASHMEM static bool homing_cycle (axes_signals_t cycle, axes_signals_t auto_squ
     // Pull off B motor to compensate for switch inaccuracy when configured.
     if(auto_square.mask && settings.axis[dual_motor_axis].dual_axis_offset != 0.0f) {
         hal.stepper.disable_motors(auto_square, settings.axis[dual_motor_axis].dual_axis_offset < 0.0f ? SquaringMode_B : SquaringMode_A);
-        distance.values[dual_motor_axis] = fabs(settings.axis[dual_motor_axis].dual_axis_offset);
+        distance.values[dual_motor_axis] = fabsf(settings.axis[dual_motor_axis].dual_axis_offset);
 #if defined(ASYMMETRIC_GANGING) || defined(ASYMMETRIC_AUTO_SQUARE)
         auto_square.mask |= (1 << (N_AXIS - 1));
 #endif
@@ -850,7 +850,7 @@ static void apply_travel_limits (float *target, float *position, work_envelope_t
         idx = Z_AXIS + 1;
         do {
             idx--;
-            if(fabs(target[idx] - position[idx]) > 0.001f)
+            if(fabsf(target[idx] - position[idx]) > 0.001f)
                 n_axes++;
         } while(idx && n_axes < 2);
 

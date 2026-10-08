@@ -6,14 +6,15 @@ CNC 3018 на плате **WeAct Studio BlackPill STM32F401CCU6 / STM32F401CEU6*
 проект — для **IAR Embedded Workbench for ARM**. За основу взяты структура,
 CMSIS, тактирование, USB CDC и проект IAR из
 [Teacup_Firmware_iar](https://github.com/alexsys87/Teacup_Firmware_iar);
-ядро grblHAL используется без изменений.
+ядро grblHAL взято из upstream с небольшими правками для компилятора IAR
+(список — в `grbl/CORE_VERSION.txt`).
 
 В каталоге [`host`](host/README.md) — программа управления станком для
 Windows (WPF, .NET 8), переделанная из Teacup Host.
 
 ## Что есть
 
-- ядро grblHAL (`grbl/`, версия в `grbl/CORE_VERSION.txt`) без изменений;
+- ядро grblHAL (`grbl/`, версия и список правок для IAR — в `grbl/CORE_VERSION.txt`);
 - 3 оси, шаговые импульсы по таймеру TIM5 (32 бит, 21 МГц), импульс
   4 мкс, задержка импульса после смены направления (`$29`);
 - шпиндель: ШИМ на TIM1_CH1 (PA8, 1 кГц, 0…10000 об/мин), включение,
@@ -148,7 +149,7 @@ GRBL_PORT=usb python3 test/renode/run_tests.py    # через USB CDC
 
 | Каталог | Содержимое |
 |---------|------------|
-| `grbl/` | ядро grblHAL (без изменений) |
+| `grbl/` | ядро grblHAL (с правками для IAR, см. `CORE_VERSION.txt`) |
 | `driver/` | драйвер платы на регистрах: `driver.c` (шаги, входы, EXTI, таймеры), `spindle.c` (ШИМ TIM1), `serial.c` (USART1), `usb_cdc.c` (USB OTG FS CDC), `nvs_flash.c` (настройки во flash), `ioports_aux.c` (дополнительные входы / выходы), `cpu.c` (тактирование, DFU), `main.c` |
 | `driver/boards/` | карта выводов |
 | `cmsis/` | CMSIS Core, файлы устройства STM32F401, startup и линкер-файлы IAR |

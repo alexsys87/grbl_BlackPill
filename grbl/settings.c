@@ -1782,7 +1782,8 @@ FLASHMEM static uint32_t get_int (setting_id_t id)
 
         case Setting_HomingEnable:;
 #if COMPATIBILITY_LEVEL <= 1
-            homing_settings_flags_t homing = { .value = settings.homing.flags.value };
+            homing_settings_flags_t homing; // No initializer: the switch jumps past it to the next cases.
+            homing.value = settings.homing.flags.value;
             homing.two_switches = settings.limits.flags.two_switches;
             value = homing.value;
 #else
@@ -2355,182 +2356,182 @@ FLASHMEM static void _settings_write_global (void)
 }
 
 PROGMEM static const setting_detail_t setting_detail[] = {
-     { Setting_PulseMicroseconds, Group_Stepper, "Step pulse time", "microseconds", Format_Decimal, "#0.0", step_us_min, NULL, Setting_IsLegacyFn, set_pulse_width, get_float, NULL },
+     { Setting_PulseMicroseconds, Group_Stepper, "Step pulse time", "microseconds", Format_Decimal, "#0.0", step_us_min, NULL, Setting_IsLegacyFn, (void *)set_pulse_width, (void *)get_float, NULL },
      { Setting_StepperIdleLockTime, Group_Stepper, "Step idle delay", "milliseconds", Format_Int16, "####0", NULL, "65535", Setting_IsLegacy, &settings.steppers.idle_lock_time, NULL, NULL },
-     { Setting_StepInvertMask, Group_Stepper, "Step pulse invert", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsLegacyFn, set_axis_mask, get_axis_mask, NULL },
-     { Setting_DirInvertMask, Group_Stepper, "Step direction invert", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsLegacyFn, set_axis_mask, get_axis_mask, NULL },
+     { Setting_StepInvertMask, Group_Stepper, "Step pulse invert", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
+     { Setting_DirInvertMask, Group_Stepper, "Step direction invert", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
 #if COMPATIBILITY_LEVEL <= 2
-     { Setting_InvertStepperEnable, Group_Stepper, "Invert stepper enable output(s)", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsLegacyFn, set_axis_mask, get_axis_mask, NULL },
+     { Setting_InvertStepperEnable, Group_Stepper, "Invert stepper enable output(s)", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
 #else
-     { Setting_InvertStepperEnable, Group_Stepper, "Invert stepper enable output", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, set_axis_mask, get_axis_mask, NULL },
+     { Setting_InvertStepperEnable, Group_Stepper, "Invert stepper enable output", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
 #endif
 #if COMPATIBILITY_LEVEL <= 1
-     { Setting_LimitPinsInvertMask, Group_Limits, "Invert limit inputs", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsLegacyFn, set_axis_mask, get_axis_mask, NULL },
+     { Setting_LimitPinsInvertMask, Group_Limits, "Invert limit inputs", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
 #else
-     { Setting_LimitPinsInvertMask, Group_Limits, "Invert limit inputs", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, set_axis_mask, get_axis_mask, NULL },
+     { Setting_LimitPinsInvertMask, Group_Limits, "Invert limit inputs", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
 #endif
-     { Setting_InvertProbePin, Group_Probing, "Invert probe inputs", NULL, Format_Bitfield, probe_signals, NULL, NULL, Setting_IsLegacyFn, set_probe_invert, get_int, is_setting_available },
-     { Setting_SpindlePWMBehaviour, Group_Spindle, "Deprecated", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, set_pwm_mode, get_int, is_setting_available },
-     { Setting_GangedDirInvertMask, Group_Stepper, "Ganged axes direction invert", NULL, Format_Bitfield, ganged_axes, NULL, NULL, Setting_IsExtendedFn, set_ganged_dir_invert, get_int, is_setting_available },
-     { Setting_SpindlePWMOptions, Group_Spindle, "PWM spindle options", NULL, Format_XBitfield, "Enable,RPM controls spindle enable signal,Disable laser mode capability,Enable ramping" PWM_SPINDLE_NO_DELAYS, NULL, NULL, Setting_IsExtendedFn, set_pwm_options, get_int, is_setting_available },
+     { Setting_InvertProbePin, Group_Probing, "Invert probe inputs", NULL, Format_Bitfield, probe_signals, NULL, NULL, Setting_IsLegacyFn, (void *)set_probe_invert, (void *)get_int, is_setting_available },
+     { Setting_SpindlePWMBehaviour, Group_Spindle, "Deprecated", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_pwm_mode, (void *)get_int, is_setting_available },
+     { Setting_GangedDirInvertMask, Group_Stepper, "Ganged axes direction invert", NULL, Format_Bitfield, ganged_axes, NULL, NULL, Setting_IsExtendedFn, (void *)set_ganged_dir_invert, (void *)get_int, is_setting_available },
+     { Setting_SpindlePWMOptions, Group_Spindle, "PWM spindle options", NULL, Format_XBitfield, "Enable,RPM controls spindle enable signal,Disable laser mode capability,Enable ramping" PWM_SPINDLE_NO_DELAYS, NULL, NULL, Setting_IsExtendedFn, (void *)set_pwm_options, (void *)get_int, is_setting_available },
 #if COMPATIBILITY_LEVEL <= 1
-     { Setting_StatusReportMask, Group_General, "Status report options", NULL, Format_Bitfield, "Position in machine coordinate,Buffer state,Line numbers,Feed & speed,Pin state,Work coordinate offset,Overrides,Probe coordinates,Buffer sync on WCO change,Parser state,Alarm substatus,Run substatus,Enable when homing,Distance-to-go", NULL, NULL, Setting_IsExtendedFn, set_report_mask, get_int, NULL },
+     { Setting_StatusReportMask, Group_General, "Status report options", NULL, Format_Bitfield, "Position in machine coordinate,Buffer state,Line numbers,Feed & speed,Pin state,Work coordinate offset,Overrides,Probe coordinates,Buffer sync on WCO change,Parser state,Alarm substatus,Run substatus,Enable when homing,Distance-to-go", NULL, NULL, Setting_IsExtendedFn, (void *)set_report_mask, (void *)get_int, NULL },
 #else
-     { Setting_StatusReportMask, Group_General, "Status report options", NULL, Format_Bitfield, "Position in machine coordinate,Buffer state", NULL, NULL, Setting_IsLegacyFn, set_report_mask, get_int, NULL },
+     { Setting_StatusReportMask, Group_General, "Status report options", NULL, Format_Bitfield, "Position in machine coordinate,Buffer state", NULL, NULL, Setting_IsLegacyFn, (void *)set_report_mask, (void *)get_int, NULL },
 #endif
      { Setting_JunctionDeviation, Group_General, "Junction deviation", "mm", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacy, &settings.junction_deviation, NULL, NULL },
      { Setting_ArcTolerance, Group_General, "Arc tolerance", "mm", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacy, &settings.arc_tolerance, NULL, NULL },
-     { Setting_ReportInches, Group_General, "Report in inches", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, set_report_inches, get_int, NULL },
-     { Setting_ControlInvertMask, Group_ControlSignals, "Invert control inputs", NULL, Format_Bitfield, control_signals, NULL, NULL, Setting_IsExpandedFn, set_control_invert, get_int, is_setting_available },
+     { Setting_ReportInches, Group_General, "Report in inches", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_report_inches, (void *)get_int, NULL },
+     { Setting_ControlInvertMask, Group_ControlSignals, "Invert control inputs", NULL, Format_Bitfield, control_signals, NULL, NULL, Setting_IsExpandedFn, (void *)set_control_invert, (void *)get_int, is_setting_available },
      { Setting_CoolantInvertMask, Group_Coolant, "Invert coolant outputs", NULL, Format_Bitfield, coolant_signals, NULL, NULL, Setting_IsExtended, &settings.coolant.invert.mask, NULL, NULL },
-     { Setting_SpindleInvertMask, Group_Spindle, "Invert spindle signals", NULL, Format_Bitfield, spindle_signals, NULL, NULL, Setting_IsExtendedFn, set_spindle_invert, get_int, is_setting_available, { .reboot_required = On } },
-     { Setting_ControlPullUpDisableMask, Group_ControlSignals, "Pullup disable control inputs", NULL, Format_Bitfield, control_signals, NULL, NULL, Setting_IsExtendedFn, set_control_disable_pullup, get_int, is_setting_available },
-     { Setting_LimitPullUpDisableMask, Group_Limits, "Pullup disable limit inputs", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, NULL },
-     { Setting_ProbePullUpDisable, Group_Probing, "Pullup disable probe inputs", NULL, Format_Bitfield, probe_signals, NULL, NULL, Setting_IsLegacyFn, set_probe_disable_pullup, get_int, is_setting_available },
-     { Setting_SoftLimitsEnable, Group_Limits, "Soft limits enable", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, set_soft_limits_enable, get_int, NULL },
+     { Setting_SpindleInvertMask, Group_Spindle, "Invert spindle signals", NULL, Format_Bitfield, spindle_signals, NULL, NULL, Setting_IsExtendedFn, (void *)set_spindle_invert, (void *)get_int, is_setting_available, { .reboot_required = On } },
+     { Setting_ControlPullUpDisableMask, Group_ControlSignals, "Pullup disable control inputs", NULL, Format_Bitfield, control_signals, NULL, NULL, Setting_IsExtendedFn, (void *)set_control_disable_pullup, (void *)get_int, is_setting_available },
+     { Setting_LimitPullUpDisableMask, Group_Limits, "Pullup disable limit inputs", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
+     { Setting_ProbePullUpDisable, Group_Probing, "Pullup disable probe inputs", NULL, Format_Bitfield, probe_signals, NULL, NULL, Setting_IsLegacyFn, (void *)set_probe_disable_pullup, (void *)get_int, is_setting_available },
+     { Setting_SoftLimitsEnable, Group_Limits, "Soft limits enable", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_soft_limits_enable, (void *)get_int, NULL },
 #if COMPATIBILITY_LEVEL <= 1
   #if N_AXIS > 3
-     { Setting_HardLimitsEnable, Group_Limits, "Hard limits enable", NULL, Format_XBitfield, "Enable,Strict mode,Disable for rotary axes", NULL, NULL, Setting_IsExpandedFn, set_hard_limits_enable, get_int, NULL },
+     { Setting_HardLimitsEnable, Group_Limits, "Hard limits enable", NULL, Format_XBitfield, "Enable,Strict mode,Disable for rotary axes", NULL, NULL, Setting_IsExpandedFn, (void *)set_hard_limits_enable, (void *)get_int, NULL },
   #else
-     { Setting_HardLimitsEnable, Group_Limits, "Hard limits enable", NULL, Format_XBitfield, "Enable,Strict mode", NULL, NULL, Setting_IsExpandedFn, set_hard_limits_enable, get_int, NULL },
+     { Setting_HardLimitsEnable, Group_Limits, "Hard limits enable", NULL, Format_XBitfield, "Enable,Strict mode", NULL, NULL, Setting_IsExpandedFn, (void *)set_hard_limits_enable, (void *)get_int, NULL },
   #endif
 #else
-     { Setting_HardLimitsEnable, Group_Limits, "Hard limits enable", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, set_hard_limits_enable, get_int, NULL },
+     { Setting_HardLimitsEnable, Group_Limits, "Hard limits enable", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_hard_limits_enable, (void *)get_int, NULL },
 #endif
 #if COMPATIBILITY_LEVEL <= 1
-     { Setting_HomingEnable, Group_Homing, "Homing cycle", NULL, Format_XBitfield, homing_options, NULL, NULL, Setting_IsExpandedFn, set_homing_enable, get_int, NULL },
+     { Setting_HomingEnable, Group_Homing, "Homing cycle", NULL, Format_XBitfield, homing_options, NULL, NULL, Setting_IsExpandedFn, (void *)set_homing_enable, (void *)get_int, NULL },
 #else
-     { Setting_HomingEnable, Group_Homing, "Homing cycle enable", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, set_homing_enable, get_int, NULL },
+     { Setting_HomingEnable, Group_Homing, "Homing cycle enable", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_homing_enable, (void *)get_int, NULL },
 #endif
-     { Setting_HomingDirMask, Group_Homing, "Homing direction invert", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsLegacyFn, set_axis_mask, get_axis_mask, NULL },
-     { Setting_HomingFeedRate, Group_Homing, "Homing locate feed rate", "mm/min", Format_Decimal, "#####0.0", NULL, NULL, Setting_IsLegacyFn, set_homing_feedrates, get_float, NULL },
-     { Setting_HomingSeekRate, Group_Homing, "Homing search seek rate", "mm/min", Format_Decimal, "#####0.0", NULL, NULL, Setting_IsLegacyFn, set_homing_feedrates, get_float, NULL },
+     { Setting_HomingDirMask, Group_Homing, "Homing direction invert", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
+     { Setting_HomingFeedRate, Group_Homing, "Homing locate feed rate", "mm/min", Format_Decimal, "#####0.0", NULL, NULL, Setting_IsLegacyFn, (void *)set_homing_feedrates, (void *)get_float, NULL },
+     { Setting_HomingSeekRate, Group_Homing, "Homing search seek rate", "mm/min", Format_Decimal, "#####0.0", NULL, NULL, Setting_IsLegacyFn, (void *)set_homing_feedrates, (void *)get_float, NULL },
      { Setting_HomingDebounceDelay, Group_Homing, "Homing switch debounce delay", "milliseconds", Format_Int16, "##0", NULL, NULL, Setting_IsLegacy, &settings.homing.debounce_delay, NULL, NULL },
-     { Setting_HomingPulloff, Group_Homing, "Homing switch pull-off distance", "mm", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacyFn, set_homing_pulloff, get_float, NULL },
+     { Setting_HomingPulloff, Group_Homing, "Homing switch pull-off distance", "mm", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacyFn, (void *)set_homing_pulloff, (void *)get_float, NULL },
      { Setting_G73Retract, Group_General, "G73 Retract distance", "mm", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsExtended, &settings.g73_retract, NULL, NULL },
      { Setting_PulseDelayMicroseconds, Group_Stepper, "Pulse delay", "microseconds", Format_Decimal, "#0.0", NULL, "20", Setting_IsExtended, &settings.steppers.pulse_delay_microseconds, NULL, NULL },
      { Setting_RpmMax, Group_Spindle, "Maximum spindle speed", "RPM", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacy, &settings.pwm_spindle.rpm_max, NULL, is_setting_available },
      { Setting_RpmMin, Group_Spindle, "Minimum spindle speed", "RPM", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacy, &settings.pwm_spindle.rpm_min, NULL, is_setting_available },
 #if !LATHE_UVW_OPTION
-     { Setting_Mode, Group_General, "Mode of operation", NULL, Format_RadioButtons, "Normal,Laser mode,Lathe mode", NULL, NULL, Setting_IsLegacyFn, set_mode, get_int, NULL },
+     { Setting_Mode, Group_General, "Mode of operation", NULL, Format_RadioButtons, "Normal,Laser mode,Lathe mode", NULL, NULL, Setting_IsLegacyFn, (void *)set_mode, (void *)get_int, NULL },
 #endif
      { Setting_PWMFreq, Group_Spindle, "Spindle PWM frequency", "Hz", Format_Decimal, "#####0", NULL, NULL, Setting_IsExtended, &settings.pwm_spindle.pwm_freq, NULL, is_setting_available },
      { Setting_PWMOffValue, Group_Spindle, "Spindle PWM off value", "percent", Format_Decimal, "##0.0", NULL, "100", Setting_IsExtended, &settings.pwm_spindle.pwm_off_value, NULL, is_setting_available },
      { Setting_PWMMinValue, Group_Spindle, "Spindle PWM min value", "percent", Format_Decimal, "##0.0", NULL, "100", Setting_IsExtended, &settings.pwm_spindle.pwm_min_value, NULL, is_setting_available },
      { Setting_PWMMaxValue, Group_Spindle, "Spindle PWM max value", "percent", Format_Decimal, "##0.0", NULL, "100", Setting_IsExtended, &settings.pwm_spindle.pwm_max_value, NULL, is_setting_available },
-     { Setting_SteppersEnergize, Group_Stepper, "Steppers to keep enabled", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, NULL },
+     { Setting_SteppersEnergize, Group_Stepper, "Steppers to keep enabled", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
      { Setting_SpindlePPR, Group_Spindle, "Spindle pulses per revolution (PPR)", NULL, Format_Int16, "###0", NULL, NULL, Setting_IsExtended, &settings.spindle.ppr, NULL, is_setting_available, { .reboot_required = On } },
-     { Setting_EnableLegacyRTCommands, Group_General, "Enable legacy RT commands", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, set_enable_legacy_rt_commands, get_int, NULL },
-     { Setting_JogSoftLimited, Group_Jogging, "Limit jog commands", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, set_jog_soft_limited, get_int, NULL },
-     { Setting_ParkingEnable, Group_SafetyDoor, "Parking cycle", NULL, Format_XBitfield, "Enable,Deactivate upon init,Enable parking override control", NULL, NULL, Setting_IsExtendedFn, set_parking_enable, get_int, NULL },
+     { Setting_EnableLegacyRTCommands, Group_General, "Enable legacy RT commands", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_enable_legacy_rt_commands, (void *)get_int, NULL },
+     { Setting_JogSoftLimited, Group_Jogging, "Limit jog commands", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_jog_soft_limited, (void *)get_int, NULL },
+     { Setting_ParkingEnable, Group_SafetyDoor, "Parking cycle", NULL, Format_XBitfield, "Enable,Deactivate upon init,Enable parking override control", NULL, NULL, Setting_IsExtendedFn, (void *)set_parking_enable, (void *)get_int, NULL },
      { Setting_ParkingAxis, Group_SafetyDoor, "Parking axis", NULL, Format_RadioButtons, "X,Y,Z", NULL, NULL, Setting_IsExtended, &settings.parking.axis, NULL, NULL },
      { Setting_HomingLocateCycles, Group_Homing, "Homing passes", NULL, Format_Int8, "##0", "1", "128", Setting_IsExtended, &settings.homing.locate_cycles, NULL, NULL },
-     { Setting_HomingCycle_1, Group_Homing, "Axes homing, first phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, NULL },
-     { Setting_HomingCycle_2, Group_Homing, "Axes homing, second phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, NULL },
-     { Setting_HomingCycle_3, Group_Homing, "Axes homing, third phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, NULL },
+     { Setting_HomingCycle_1, Group_Homing, "Axes homing, first phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
+     { Setting_HomingCycle_2, Group_Homing, "Axes homing, second phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
+     { Setting_HomingCycle_3, Group_Homing, "Axes homing, third phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, NULL },
 #if N_AXIS > 3
-     { Setting_HomingCycle_4, Group_Homing, "Axes homing, fourth phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, is_setting_available },
+     { Setting_HomingCycle_4, Group_Homing, "Axes homing, fourth phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, is_setting_available },
 #endif
 #if N_AXIS > 4
-     { Setting_HomingCycle_5, Group_Homing, "Axes homing, fifth phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, is_setting_available },
+     { Setting_HomingCycle_5, Group_Homing, "Axes homing, fifth phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, is_setting_available },
 #endif
 #if N_AXIS > 5
-     { Setting_HomingCycle_6, Group_Homing, "Axes homing, sixth phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, is_setting_available },
+     { Setting_HomingCycle_6, Group_Homing, "Axes homing, sixth phase", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, is_setting_available },
 #endif
      { Setting_ParkingPulloutIncrement, Group_SafetyDoor, "Parking pull-out distance", "mm", Format_Decimal, "###0.0", NULL, NULL, Setting_IsExtended, &settings.parking.pullout_increment, NULL, NULL },
      { Setting_ParkingPulloutRate, Group_SafetyDoor, "Parking pull-out rate", "mm/min", Format_Decimal, "###0.0", NULL, NULL, Setting_IsExtended, &settings.parking.pullout_rate, NULL, NULL },
      { Setting_ParkingTarget, Group_SafetyDoor, "Parking target", "mm", Format_Decimal, "-###0.0", "-100000", NULL, Setting_IsExtended, &settings.parking.target, NULL, NULL },
      { Setting_ParkingFastRate, Group_SafetyDoor, "Parking fast rate", "mm/min", Format_Decimal, "###0.0", NULL, NULL, Setting_IsExtended, &settings.parking.rate, NULL, NULL },
-     { Setting_RestoreOverrides, Group_General, "Restore overrides", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, set_restore_overrides, get_int, NULL },
+     { Setting_RestoreOverrides, Group_General, "Restore overrides", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_restore_overrides, (void *)get_int, NULL },
 #ifndef NO_SAFETY_DOOR_SUPPORT
      { Setting_DoorOptions, Group_SafetyDoor, "Safety door options", NULL, Format_Bitfield, door_options, NULL, NULL, Setting_IsExtended, &settings.safety_door.flags.value, NULL, is_setting_available },
 #endif
-     { Setting_SleepEnable, Group_General, "Sleep enable", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, set_sleep_enable, get_int, is_setting_available },
-     { Setting_HoldActions, Group_General, "Feed hold actions", NULL, Format_Bitfield, "Disable laser during hold,Restore spindle and coolant state on resume,Set RPM to minimum (except for laser M4)", NULL, NULL, Setting_IsExtendedFn, set_hold_actions, get_int, NULL },
-     { Setting_ForceInitAlarm, Group_General, "Force init alarm", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, set_force_initialization_alarm, get_int, NULL },
-     { Setting_ProbingFlags, Group_Probing, "Probing options", NULL, Format_Bitfield, probing_options, NULL, NULL, Setting_IsExtendedFn, set_probe_flags, get_int, is_setting_available },
+     { Setting_SleepEnable, Group_General, "Sleep enable", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_sleep_enable, (void *)get_int, is_setting_available },
+     { Setting_HoldActions, Group_General, "Feed hold actions", NULL, Format_Bitfield, "Disable laser during hold,Restore spindle and coolant state on resume,Set RPM to minimum (except for laser M4)", NULL, NULL, Setting_IsExtendedFn, (void *)set_hold_actions, (void *)get_int, NULL },
+     { Setting_ForceInitAlarm, Group_General, "Force init alarm", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_force_initialization_alarm, (void *)get_int, NULL },
+     { Setting_ProbingFlags, Group_Probing, "Probing options", NULL, Format_Bitfield, probing_options, NULL, NULL, Setting_IsExtendedFn, (void *)set_probe_flags, (void *)get_int, is_setting_available },
 #if ENABLE_SPINDLE_LINEARIZATION
-     { Setting_LinearSpindlePiece1, Group_Spindle, "Spindle linearisation, 1st point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, set_linear_piece, get_linear_piece, NULL },
+     { Setting_LinearSpindlePiece1, Group_Spindle, "Spindle linearisation, 1st point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, (void *)set_linear_piece, (void *)get_linear_piece, NULL },
   #if SPINDLE_NPWM_PIECES > 1
-     { Setting_LinearSpindlePiece2, Group_Spindle, "Spindle linearisation, 2nd point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, set_linear_piece, get_linear_piece, NULL },
+     { Setting_LinearSpindlePiece2, Group_Spindle, "Spindle linearisation, 2nd point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, (void *)set_linear_piece, (void *)get_linear_piece, NULL },
   #endif
   #if SPINDLE_NPWM_PIECES > 2
-     { Setting_LinearSpindlePiece3, Group_Spindle, "Spindle linearisation, 3rd point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, set_linear_piece, get_linear_piece, NULL },
+     { Setting_LinearSpindlePiece3, Group_Spindle, "Spindle linearisation, 3rd point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, (void *)set_linear_piece, (void *)get_linear_piece, NULL },
   #endif
   #if SPINDLE_NPWM_PIECES > 3
-     { Setting_LinearSpindlePiece4, Group_Spindle, "Spindle linearisation, 4th point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, set_linear_piece, get_linear_piece, NULL },
+     { Setting_LinearSpindlePiece4, Group_Spindle, "Spindle linearisation, 4th point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, (void *)set_linear_piece, (void *)get_linear_piece, NULL },
   #endif
 #endif
      { Setting_PositionPGain, Group_Spindle_Sync, "Spindle sync P-gain", NULL, Format_Decimal, "###0.000", NULL, NULL, Setting_IsExtended, &settings.position.pid.p_gain, NULL, is_group_available },
      { Setting_PositionIGain, Group_Spindle_Sync, "Spindle sync I-gain", NULL, Format_Decimal, "###0.000", NULL, NULL, Setting_IsExtended, &settings.position.pid.i_gain, NULL, is_group_available },
      { Setting_PositionDGain, Group_Spindle_Sync, "Spindle sync D-gain", NULL, Format_Decimal, "###0.000", NULL, NULL, Setting_IsExtended, &settings.position.pid.d_gain, NULL, is_group_available },
      { Setting_PositionIMaxError, Group_Spindle_Sync, "Spindle sync PID max I error", NULL, Format_Decimal, "###0.000", NULL, NULL, Setting_IsExtended, &settings.position.pid.i_max_error, NULL, is_group_available },
-     { Setting_AxisStepsPerMM, Group_Axis0, "-axis travel resolution", axis_steps, Format_Decimal, "#####0.000##", NULL, NULL, Setting_IsLegacyFn, set_axis_setting, get_float, NULL, AXIS_OPTS },
-     { Setting_AxisMaxRate, Group_Axis0, "-axis maximum rate", axis_rate, Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacyFn, set_axis_setting, get_float, NULL, AXIS_OPTS },
-     { Setting_AxisAcceleration, Group_Axis0, "-axis acceleration", axis_accel, Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacyFn, set_axis_setting, get_float, NULL, AXIS_OPTS },
-     { Setting_AxisMaxTravel, Group_Axis0, "-axis maximum travel", axis_dist, Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacyFn, set_axis_setting, get_float, NULL, AXIS_OPTS },
+     { Setting_AxisStepsPerMM, Group_Axis0, "-axis travel resolution", axis_steps, Format_Decimal, "#####0.000##", NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_setting, (void *)get_float, NULL, AXIS_OPTS },
+     { Setting_AxisMaxRate, Group_Axis0, "-axis maximum rate", axis_rate, Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_setting, (void *)get_float, NULL, AXIS_OPTS },
+     { Setting_AxisAcceleration, Group_Axis0, "-axis acceleration", axis_accel, Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_setting, (void *)get_float, NULL, AXIS_OPTS },
+     { Setting_AxisMaxTravel, Group_Axis0, "-axis maximum travel", axis_dist, Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacyFn, (void *)set_axis_setting, (void *)get_float, NULL, AXIS_OPTS },
 #if ENABLE_BACKLASH_COMPENSATION
-     { Setting_AxisBacklash, Group_Axis0, "-axis backlash compensation", axis_dist, Format_Decimal, "#####0.000##", NULL, NULL, Setting_IsExtendedFn, set_axis_setting, get_float, NULL, AXIS_OPTS },
+     { Setting_AxisBacklash, Group_Axis0, "-axis backlash compensation", axis_dist, Format_Decimal, "#####0.000##", NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_setting, (void *)get_float, NULL, AXIS_OPTS },
 #endif
 #if ENABLE_JERK_ACCELERATION
-     { Setting_AxisJerk, Group_Axis0, "-axis jerk", axis_jerk, Format_Decimal, "#####0.000", NULL, NULL, Setting_IsExtendedFn, set_axis_setting, get_float, NULL, AXIS_OPTS },
+     { Setting_AxisJerk, Group_Axis0, "-axis jerk", axis_jerk, Format_Decimal, "#####0.000", NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_setting, (void *)get_float, NULL, AXIS_OPTS },
 #endif
-     { Setting_AxisAutoSquareOffset, Group_Axis0, "-axis dual axis offset", "mm", Format_Decimal, "-0.000", "-10", "10", Setting_IsExtendedFn, set_axis_setting, get_float, is_setting_available, AXIS_OPTS },
-     { Setting_AxisHomingFeedRate, Group_Axis0, "-axis homing locate feed rate", axis_rate, Format_Decimal, "###0", NULL, NULL, Setting_NonCoreFn, set_axis_setting, get_float, is_setting_available, AXIS_OPTS },
-     { Setting_AxisHomingSeekRate, Group_Axis0, "-axis homing search seek rate", axis_rate, Format_Decimal, "###0", NULL, NULL, Setting_NonCoreFn, set_axis_setting, get_float, is_setting_available, AXIS_OPTS },
-     { Setting_SpindleAtSpeedTolerance, Group_Spindle, "Spindle at speed tolerance", "percent", Format_Decimal, "##0.0", NULL, NULL, Setting_IsExtendedFn, set_float, get_float, is_setting_available },
-     { Setting_ToolChangeMode, Group_Toolchange, "Tool change mode", NULL, Format_RadioButtons, "Normal,Manual touch off,Manual touch off @ G59.3,Automatic touch off @ G59.3,Ignore M6", NULL, NULL, Setting_IsExtendedFn, set_tool_change_mode, get_int, is_setting_available },
-     { Setting_ToolChangeProbingDistance, Group_Toolchange, "Tool change probing distance", "mm", Format_Decimal, "#####0.0", NULL, NULL, Setting_IsExtendedFn, set_tool_change_probing_distance, get_float, is_setting_available },
+     { Setting_AxisAutoSquareOffset, Group_Axis0, "-axis dual axis offset", "mm", Format_Decimal, "-0.000", "-10", "10", Setting_IsExtendedFn, (void *)set_axis_setting, (void *)get_float, is_setting_available, AXIS_OPTS },
+     { Setting_AxisHomingFeedRate, Group_Axis0, "-axis homing locate feed rate", axis_rate, Format_Decimal, "###0", NULL, NULL, Setting_NonCoreFn, (void *)set_axis_setting, (void *)get_float, is_setting_available, AXIS_OPTS },
+     { Setting_AxisHomingSeekRate, Group_Axis0, "-axis homing search seek rate", axis_rate, Format_Decimal, "###0", NULL, NULL, Setting_NonCoreFn, (void *)set_axis_setting, (void *)get_float, is_setting_available, AXIS_OPTS },
+     { Setting_SpindleAtSpeedTolerance, Group_Spindle, "Spindle at speed tolerance", "percent", Format_Decimal, "##0.0", NULL, NULL, Setting_IsExtendedFn, (void *)set_float, (void *)get_float, is_setting_available },
+     { Setting_ToolChangeMode, Group_Toolchange, "Tool change mode", NULL, Format_RadioButtons, "Normal,Manual touch off,Manual touch off @ G59.3,Automatic touch off @ G59.3,Ignore M6", NULL, NULL, Setting_IsExtendedFn, (void *)set_tool_change_mode, (void *)get_int, is_setting_available },
+     { Setting_ToolChangeProbingDistance, Group_Toolchange, "Tool change probing distance", "mm", Format_Decimal, "#####0.0", NULL, NULL, Setting_IsExtendedFn, (void *)set_tool_change_probing_distance, (void *)get_float, is_setting_available },
      { Setting_ToolChangeFeedRate, Group_Toolchange, "Tool change locate feed rate", "mm/min", Format_Decimal, "#####0.0", NULL, NULL, Setting_IsExtended, &settings.tool_change.feed_rate, NULL, is_setting_available },
      { Setting_ToolChangeSeekRate, Group_Toolchange, "Tool change search seek rate", "mm/min", Format_Decimal, "#####0.0", NULL, NULL, Setting_IsExtended, &settings.tool_change.seek_rate, NULL, is_setting_available },
      { Setting_ToolChangePulloffRate, Group_Toolchange, "Tool change probe pull-off rate", "mm/min", Format_Decimal, "#####0.0", NULL, NULL, Setting_IsExtended, &settings.tool_change.pulloff_rate, NULL, is_setting_available },
-     { Setting_ToolChangeOptions, Group_Toolchange, "Tool change options", NULL, Format_Bitfield, "Restore position after M6,Change tool at G30,Fast probe pull off", NULL, NULL, Setting_IsExtendedFn, set_toolchange_flags, get_int, is_setting_available },
+     { Setting_ToolChangeOptions, Group_Toolchange, "Tool change options", NULL, Format_Bitfield, "Restore position after M6,Change tool at G30,Fast probe pull off", NULL, NULL, Setting_IsExtendedFn, (void *)set_toolchange_flags, (void *)get_int, is_setting_available },
      { Setting_DualAxisLengthFailPercent, Group_Limits_DualAxis, "Dual axis length fail", "percent", Format_Decimal, "##0.0", "0", "100", Setting_IsExtended, &settings.homing.dual_axis.fail_length_percent, NULL, is_setting_available },
      { Setting_DualAxisLengthFailMin, Group_Limits_DualAxis, "Dual axis length fail min", "mm", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsExtended, &settings.homing.dual_axis.fail_distance_min, NULL, is_setting_available },
      { Setting_DualAxisLengthFailMax, Group_Limits_DualAxis, "Dual axis length fail max", "mm", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsExtended, &settings.homing.dual_axis.fail_distance_max, NULL, is_setting_available },
 #if COMPATIBILITY_LEVEL <= 1
-     { Setting_DisableG92Persistence, Group_General, "Disable G92 persistence", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, set_g92_disable_persistence, get_int, NULL },
+     { Setting_DisableG92Persistence, Group_General, "Disable G92 persistence", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_g92_disable_persistence, (void *)get_int, NULL },
 #endif
 #if N_AXIS > 3
-     { Settings_RotaryAxes, Group_Stepper, "Rotary axes", NULL, Format_Bitfield, rotary_axes, NULL, NULL, Setting_IsExtendedFn, set_rotary_axes, get_int, is_setting_available },
+     { Settings_RotaryAxes, Group_Stepper, "Rotary axes", NULL, Format_Bitfield, rotary_axes, NULL, NULL, Setting_IsExtendedFn, (void *)set_rotary_axes, (void *)get_int, is_setting_available },
 #endif
      { Setting_DoorSpindleOnDelay, Group_SafetyDoor, "Spindle on delay", "s", Format_Decimal, "#0.0", "0.5", "60", Setting_IsExtended, &settings.safety_door.spindle_on_delay, NULL, NULL, { .allow_null = On } },
      { Setting_DoorCoolantOnDelay, Group_SafetyDoor, "Coolant on delay", "s", Format_Decimal, "#0.0", "0.5", "20", Setting_IsExtended, &settings.safety_door.coolant_on_delay, NULL, NULL, { .allow_null = On } },
-     { Setting_SpindleOnDelay, Group_Spindle, "Spindle on delay", "s", Format_Decimal, "#0.0", "0.5", "60", Setting_IsExtendedFn, set_float, get_float, is_setting_available, { .allow_null = On } },
-     { Setting_SpindleType, Group_Spindle, "Default spindle", NULL, Format_RadioButtons, spindle_types, NULL, NULL, Setting_IsExtendedFn, set_default_spindle, get_int, is_setting_available, { .reboot_required = On } },
+     { Setting_SpindleOnDelay, Group_Spindle, "Spindle on delay", "s", Format_Decimal, "#0.0", "0.5", "60", Setting_IsExtendedFn, (void *)set_float, (void *)get_float, is_setting_available, { .allow_null = On } },
+     { Setting_SpindleType, Group_Spindle, "Default spindle", NULL, Format_RadioButtons, spindle_types, NULL, NULL, Setting_IsExtendedFn, (void *)set_default_spindle, (void *)get_int, is_setting_available, { .reboot_required = On } },
      { Setting_PlannerBlocks, Group_General, "Planner buffer blocks", NULL, Format_Int16, "####0", "30", "1000", Setting_IsExtended, &settings.planner_buffer_blocks, NULL, NULL, { .reboot_required = On } },
-     { Setting_AutoReportInterval, Group_General, "Autoreport interval", "ms", Format_Int16, "###0", "100", "1000", Setting_IsExtendedFn, set_report_interval, get_int, NULL, { .reboot_required = On, .allow_null = On } },
+     { Setting_AutoReportInterval, Group_General, "Autoreport interval", "ms", Format_Int16, "###0", "100", "1000", Setting_IsExtendedFn, (void *)set_report_interval, (void *)get_int, NULL, { .reboot_required = On, .allow_null = On } },
 //     { Setting_TimeZoneOffset, Group_General, "Timezone offset", NULL, Format_Decimal, "-#0.00", "0", "12", Setting_IsExtended, &settings.timezone, NULL, NULL },
-     { Setting_UnlockAfterEStop, Group_General, "Unlock required after E-Stop", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, set_estop_unlock, get_int, is_setting_available },
-     { Setting_EnableToolPersistence, Group_Toolchange, "Keep tool number over reboot", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, set_persistent_tool, get_int, NULL },
+     { Setting_UnlockAfterEStop, Group_General, "Unlock required after E-Stop", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_estop_unlock, (void *)get_int, is_setting_available },
+     { Setting_EnableToolPersistence, Group_Toolchange, "Keep tool number over reboot", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_persistent_tool, (void *)get_int, NULL },
 #if NGC_EXPRESSIONS_ENABLE
-     { Setting_NGCDebugOut, Group_General, "Output NGC debug messages", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, set_ngc_debug_out, get_int, NULL },
+     { Setting_NGCDebugOut, Group_General, "Output NGC debug messages", NULL, Format_Bool, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_ngc_debug_out, (void *)get_int, NULL },
 #endif
 #if COMPATIBILITY_LEVEL <= 1
      { Setting_OffsetLock, Group_General, "Lock coordinate systems", NULL, Format_Bitfield, "G59.1,G59.2,G59.3", NULL, NULL, Setting_IsExtended, &settings.offset_lock.mask, NULL, NULL },
 #endif
-     { Setting_EncoderSpindle, Group_Spindle, "Encoder spindle", NULL, Format_RadioButtons, spindle_types, NULL, NULL, Setting_IsExtendedFn, set_encoder_spindle, get_int, is_setting_available },
+     { Setting_EncoderSpindle, Group_Spindle, "Encoder spindle", NULL, Format_RadioButtons, spindle_types, NULL, NULL, Setting_IsExtendedFn, (void *)set_encoder_spindle, (void *)get_int, is_setting_available },
      { Setting_RGB_StripLengt0, Group_AuxPorts, "LED strip 1 length", NULL, Format_Int8, "##0", NULL, "255", Setting_NonCore, &settings.rgb_strip.length0, NULL, is_setting_available },
      { Setting_RGB_StripLengt1, Group_AuxPorts, "LED strip 2 length", NULL, Format_Int8, "##0", NULL, "255", Setting_NonCore, &settings.rgb_strip.length1, NULL, is_setting_available },
 #if N_AXIS > 3
-     { Setting_RotaryWrap, Group_Stepper, "Fast rotary go to G28", NULL, Format_Bitfield, rotary_axes, NULL, NULL, Setting_IsExtendedFn, set_rotary_wrap_axes, get_int, is_setting_available },
+     { Setting_RotaryWrap, Group_Stepper, "Fast rotary go to G28", NULL, Format_Bitfield, rotary_axes, NULL, NULL, Setting_IsExtendedFn, (void *)set_rotary_wrap_axes, (void *)get_int, is_setting_available },
 #endif
-     { Setting_SpindleOffDelay, Group_Spindle, "Spindle off delay", "s", Format_Decimal, "#0.0", "0.5", "60", Setting_IsExtendedFn, set_float, get_float, is_setting_available, { .allow_null = On } },
+     { Setting_SpindleOffDelay, Group_Spindle, "Spindle off delay", "s", Format_Decimal, "#0.0", "0.5", "60", Setting_IsExtendedFn, (void *)set_float, (void *)get_float, is_setting_available, { .allow_null = On } },
      { Setting_FSOptions, Group_General, "File systems options", NULL, Format_Bitfield, fs_options, NULL, NULL, Setting_IsExtended, &settings.fs_options.mask, NULL, is_setting_available },
-     { Setting_HomePinsInvertMask, Group_Limits, "Invert home inputs", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, is_setting_available },
-     { Setting_CoolantOnDelay, Group_Coolant, "Coolant on delay", "s", Format_Decimal, "#0.0", "0.5", "20", Setting_IsExtendedFn, set_float, get_float, is_setting_available, { .allow_null = On } },
-     { Setting_MotorWarningsEnable, Group_Stepper, "Motor warning inputs enable", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, is_setting_available },
-     { Setting_MotorWarningsInvert, Group_Stepper, "Invert motor warning inputs", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, is_setting_available },
-     { Setting_MotorFaultsEnable, Group_Stepper, "Motor fault inputs enable", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, is_setting_available },
-     { Setting_MotorFaultsInvert, Group_Stepper, "Invert motor fault inputs", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, set_axis_mask, get_axis_mask, is_setting_available },
-     { Setting_ResetActions, Group_General, "Reset actions", NULL, Format_Bitfield, "Clear homed status if position was lost,Clear offsets (except G92),Clear rapids override,Clear feed override", NULL, NULL, Setting_IsExtendedFn, set_reset_actions, get_int, NULL },
+     { Setting_HomePinsInvertMask, Group_Limits, "Invert home inputs", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, is_setting_available },
+     { Setting_CoolantOnDelay, Group_Coolant, "Coolant on delay", "s", Format_Decimal, "#0.0", "0.5", "20", Setting_IsExtendedFn, (void *)set_float, (void *)get_float, is_setting_available, { .allow_null = On } },
+     { Setting_MotorWarningsEnable, Group_Stepper, "Motor warning inputs enable", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, is_setting_available },
+     { Setting_MotorWarningsInvert, Group_Stepper, "Invert motor warning inputs", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, is_setting_available },
+     { Setting_MotorFaultsEnable, Group_Stepper, "Motor fault inputs enable", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, is_setting_available },
+     { Setting_MotorFaultsInvert, Group_Stepper, "Invert motor fault inputs", NULL, Format_AxisMask, NULL, NULL, NULL, Setting_IsExtendedFn, (void *)set_axis_mask, (void *)get_axis_mask, is_setting_available },
+     { Setting_ResetActions, Group_General, "Reset actions", NULL, Format_Bitfield, "Clear homed status if position was lost,Clear offsets (except G92),Clear rapids override,Clear feed override", NULL, NULL, Setting_IsExtendedFn, (void *)set_reset_actions, (void *)get_int, NULL },
      { Setting_StepperEnableDelay, Group_Stepper, "Stepper enable delay", "ms", Format_Int16, "##0", NULL, "500", Setting_IsExtended, &settings.stepper_enable_delay, NULL, NULL },
-     { Setting_SubroutineOptions, Group_General, "Subroutine options", NULL, Format_Bitfield, "Prescan for internal M98 subroutines", NULL, NULL, Setting_IsExtendedFn, set_suboptions, get_int, is_setting_available },
+     { Setting_SubroutineOptions, Group_General, "Subroutine options", NULL, Format_Bitfield, "Prescan for internal M98 subroutines", NULL, NULL, Setting_IsExtendedFn, (void *)set_suboptions, (void *)get_int, is_setting_available },
 #if N_AXIS > 3
-     { Setting_RotaryOptions, Group_General, "Rotary options", NULL, Format_XBitfield, "Fix feedrate,Revert metric conversion", NULL, NULL, Setting_IsExpandedFn, set_rotary_options, get_int, NULL },
+     { Setting_RotaryOptions, Group_General, "Rotary options", NULL, Format_XBitfield, "Fix feedrate,Revert metric conversion", NULL, NULL, Setting_IsExpandedFn, (void *)set_rotary_options, (void *)get_int, NULL },
 #endif
-     { Setting_MPGAutoReportInterval, Group_MPG, "MPG autoreport interval", "ms", Format_Int16, "###0", "100", "1000", Setting_IsExtendedFn, set_mpg_report_interval, get_int, NULL, { .reboot_required = On, .allow_null = On } },
-     { Settings_MPG_BaudRate, Group_MPG, "MPG baud rate", NULL, Format_RadioButtons, "38400,115200,230400,460800,576000,921600", NULL, NULL, Setting_NonCoreFn, mpg_set_baud, get_int, is_setting_available },
+     { Setting_MPGAutoReportInterval, Group_MPG, "MPG autoreport interval", "ms", Format_Int16, "###0", "100", "1000", Setting_IsExtendedFn, (void *)set_mpg_report_interval, (void *)get_int, NULL, { .reboot_required = On, .allow_null = On } },
+     { Settings_MPG_BaudRate, Group_MPG, "MPG baud rate", NULL, Format_RadioButtons, "38400,115200,230400,460800,576000,921600", NULL, NULL, Setting_NonCoreFn, (void *)mpg_set_baud, (void *)get_int, is_setting_available },
 };
 
 PROGMEM static const setting_descr_t setting_descr[] = {
@@ -3853,7 +3854,7 @@ FLASHMEM void settings_init (void)
 
         if(settings.version.build <= 250102) {
 //            settings.spindle.on_delay = settings.safety_door.spindle_on_delay * 1000.0f;
-            settings.coolant.on_delay = settings.safety_door.coolant_on_delay * 1000.0f;
+            settings.coolant.on_delay = (uint16_t)(settings.safety_door.coolant_on_delay * 1000.0f);
             if((changed.spindle = settings.spindle.at_speed_tolerance != settings.pwm_spindle.at_speed_tolerance)) {
                 settings.spindle.at_speed_tolerance = settings.pwm_spindle.at_speed_tolerance;
                 grbl.on_settings_changed(&settings, changed);

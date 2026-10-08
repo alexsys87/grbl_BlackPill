@@ -410,8 +410,8 @@ FLASHMEM bool ioport_set_function (xbar_t *pin, pin_function_t function, driver_
             switch(cfg->type) {
 
                 case Port_DigitalIn:
-                    if(caps.control)
-                        hal.signals_cap.mask |= caps.control->mask;
+                    if(caps)
+                        hal.signals_cap.mask |= ((control_signals_t *)caps)->mask;
                     if(xbar_is_probe_in(function) || xbar_is_motor_fault_in(function) || xbar_fn_to_signals_mask(function).mask)
                         setting_remove_elements(Settings_IoPort_InvertIn, cfg->bus.mask, false);
                     break;
@@ -486,7 +486,7 @@ static status_code_t _set_value (io_port_cfg_t *p, uint8_t *port, pin_cap_t caps
     if((status = isintf(value) ? Status_OK : Status_BadNumberFormat) == Status_OK) {
         if(value >= 0.0f) {
 
-            xbar_t *portinfo = hal.port.get_pin_info(p->handle->type >> 1, p->handle->type & 1, map_reverse(&ports_cfg[p->handle->type], (uint8_t)value));
+            xbar_t *portinfo = hal.port.get_pin_info((io_port_type_t)(p->handle->type >> 1), (io_port_direction_t)(p->handle->type & 1), map_reverse(&ports_cfg[p->handle->type], (uint8_t)value));
 
             if(portinfo == NULL || !portinfo->cap.claimable)
                 status = Status_AuxiliaryPortUnavailable;
@@ -503,7 +503,7 @@ static status_code_t _set_value (io_port_cfg_t *p, uint8_t *port, pin_cap_t caps
 
 static xbar_t *_get_info (io_port_cfg_t *p, uint8_t port)
 {
-    return hal.port.get_pin_info(p->handle->type >> 1, p->handle->type & 1, map_reverse(&ports_cfg[p->handle->type], port));
+    return hal.port.get_pin_info((io_port_type_t)(p->handle->type >> 1), (io_port_direction_t)(p->handle->type & 1), map_reverse(&ports_cfg[p->handle->type], port));
 }
 
 uint8_t _get_next (io_port_cfg_t *p, uint8_t port, const char *description, pin_cap_t caps)
@@ -513,22 +513,22 @@ uint8_t _get_next (io_port_cfg_t *p, uint8_t port, const char *description, pin_
     caps.claimable = On;
 
     if(description && *description)
-        px = ioport_find_free(p->handle->type >> 1, p->handle->type & 1, (pin_cap_t){ .claimable = On }, description);
+        px = ioport_find_free((io_port_type_t)(p->handle->type >> 1), (io_port_direction_t)(p->handle->type & 1), (pin_cap_t){ .claimable = On }, description);
 
     if(px == IOPORT_UNASSIGNED && !(port == 0 && port == p->port_max))
-        px = ioport_find_free(p->handle->type >> 1, p->handle->type & 1, caps, uitoa(port == IOPORT_UNASSIGNED ? p->port_max : (port > p->port_max ? p->port_max : port) - 1));
+        px = ioport_find_free((io_port_type_t)(p->handle->type >> 1), (io_port_direction_t)(p->handle->type & 1), caps, uitoa(port == IOPORT_UNASSIGNED ? p->port_max : (port > p->port_max ? p->port_max : port) - 1));
 
     return px;
 }
 
 FLASHMEM static xbar_t *_claim (io_port_cfg_t *p, uint8_t *port, const char *description, pin_cap_t caps)
 {
-    xbar_t *portinfo = *port <= p->port_max ? hal.port.get_pin_info(p->handle->type >> 1, p->handle->type & 1, map_reverse(&ports_cfg[p->handle->type], *port)) : NULL;
+    xbar_t *portinfo = *port <= p->port_max ? hal.port.get_pin_info((io_port_type_t)(p->handle->type >> 1), (io_port_direction_t)(p->handle->type & 1), map_reverse(&ports_cfg[p->handle->type], *port)) : NULL;
 
     if(!portinfo)
         *port = IOPORT_UNASSIGNED;
 
-    return portinfo && !portinfo->mode.claimed && (caps.mask == 0 || (portinfo->cap.mask & caps.mask) == caps.mask) && ioport_claim(p->handle->type >> 1, p->handle->type & 1, port, description)
+    return portinfo && !portinfo->mode.claimed && (caps.mask == 0 || (portinfo->cap.mask & caps.mask) == caps.mask) && ioport_claim((io_port_type_t)(p->handle->type >> 1), (io_port_direction_t)(p->handle->type & 1), port, description)
             ? portinfo
             : NULL;
 }
@@ -1196,7 +1196,7 @@ uint_fast16_t ioports_compute_pwm_value (ioports_pwm_t *pwm_data, float value)
 FLASHMEM void ioport_save_input_settings (xbar_t *xbar, gpio_in_config_t *config)
 {
     io_ports_list_t *io_port = ports;
-    io_ports_private_t *cfg = get_port_data(!xbar->mode.analog, xbar->mode.output);
+    io_ports_private_t *cfg = get_port_data((io_port_type_t)!xbar->mode.analog, (io_port_direction_t)xbar->mode.output);
 
     if(io_port) do {
         if(io_port->ports_id == xbar->ports_id) {
@@ -1238,7 +1238,7 @@ FLASHMEM void ioport_save_input_settings (xbar_t *xbar, gpio_in_config_t *config
 FLASHMEM void ioport_save_output_settings (xbar_t *xbar, gpio_out_config_t *config)
 {
     io_ports_list_t *io_port = ports;
-    io_ports_private_t *cfg = get_port_data(!xbar->mode.analog, xbar->mode.output);
+    io_ports_private_t *cfg = get_port_data((io_port_type_t)!xbar->mode.analog, (io_port_direction_t)xbar->mode.output);
 
     if(io_port) do {
         if(io_port->ports_id == xbar->ports_id) {
@@ -1441,12 +1441,12 @@ PROGMEM static const setting_group_detail_t ioport_groups[] = {
 };
 
 PROGMEM static const setting_detail_t ioport_settings[] = {
-    { Settings_IoPort_InvertIn, Group_AuxPorts, "Invert I/O Port inputs", NULL, Format_Bitfield, ports_cfg[Port_DigitalIn].port_names, NULL, NULL, Setting_NonCoreFn, aux_set_value, aux_get_value, is_setting_available },
+    { Settings_IoPort_InvertIn, Group_AuxPorts, "Invert I/O Port inputs", NULL, Format_Bitfield, ports_cfg[Port_DigitalIn].port_names, NULL, NULL, Setting_NonCoreFn, (void *)aux_set_value, (void *)aux_get_value, is_setting_available },
 #ifdef AUX_SETTINGS_PULLUP
-    { Settings_IoPort_Pullup_Disable, Group_AuxPorts, "I/O Port inputs pullup disable", NULL, Format_Bitfield, digital.in.port_names, NULL, NULL, Setting_NonCoreFn, aux_set_value, aux_get_value, is_setting_available },
+    { Settings_IoPort_Pullup_Disable, Group_AuxPorts, "I/O Port inputs pullup disable", NULL, Format_Bitfield, digital.in.port_names, NULL, NULL, Setting_NonCoreFn, (void *)aux_set_value, (void *)aux_get_value, is_setting_available },
 #endif
-    { Settings_IoPort_InvertOut, Group_AuxPorts, "Invert I/O Port outputs", NULL, Format_Bitfield, ports_cfg[Port_DigitalOut].port_names, NULL, NULL, Setting_NonCoreFn, aux_set_value, aux_get_value, is_setting_available },
-//    { Settings_IoPort_OD_Enable, Group_AuxPorts, "I/O Port outputs as open drain", NULL, Format_Bitfield, digital.out.port_names, NULL, NULL, Setting_NonCoreFn, aux_set_value, aux_get_value, is_setting_available }
+    { Settings_IoPort_InvertOut, Group_AuxPorts, "Invert I/O Port outputs", NULL, Format_Bitfield, ports_cfg[Port_DigitalOut].port_names, NULL, NULL, Setting_NonCoreFn, (void *)aux_set_value, (void *)aux_get_value, is_setting_available },
+//    { Settings_IoPort_OD_Enable, Group_AuxPorts, "I/O Port outputs as open drain", NULL, Format_Bitfield, digital.out.port_names, NULL, NULL, Setting_NonCoreFn, (void *)aux_set_value, (void *)aux_get_value, is_setting_available }
 };
 
 PROGMEM static const setting_descr_t ioport_settings_descr[] = {

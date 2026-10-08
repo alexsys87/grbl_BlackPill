@@ -66,8 +66,7 @@ void cpu_reboot_to_bootloader (void)
     (void)RCC->APB1ENR;
     PWR->CR |= PWR_CR_DBP;                  // Backup domain writable.
     RTC->BKP0R = BOOTLOADER_MAGIC;
-    NVIC_SystemReset();
-    for(;;);
+    NVIC_SystemReset();             // Doesn't return.
 }
 
 /// Very first thing at startup: enter the bootloader if $DFU asked for it.

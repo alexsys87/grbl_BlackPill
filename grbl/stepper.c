@@ -494,7 +494,7 @@ ISR_CODE void ISR_FUNC(stepper_driver_interrupt_handler)(void)
                     st.dir_out = st.exec_segment->exec_block->direction;
 
                 if(st.exec_block != NULL && st.exec_block->offset_id != st.exec_segment->exec_block->offset_id)
-                    report_add_realtime(Report_WCO|Report_ForceWCO);
+                    report_add_realtime((report_tracking_t)(Report_WCO|Report_ForceWCO));
 
                 st.exec_block = st.exec_segment->exec_block;
                 st.step_event_count = st.exec_block->step_event_count;

@@ -54,7 +54,6 @@ typedef struct {
 static uint8_t n_spindle = 0;
 static spindle_sys_t sys_spindle[N_SYS_SPINDLE] = {0};
 static spindle_reg_t spindles[N_SPINDLE] = {0}, *pwm_spindle = NULL;
-static const spindle_data_ptrs_t *encoder;
 
 FLASHMEM static void spindle_init (void *data)
 {
@@ -361,7 +360,6 @@ FLASHMEM void spindle_bind_encoder (const spindle_data_ptrs_t *encoder_data)
     uint_fast8_t idx;
     spindle_ptrs_t *spindle;
 
-    encoder = encoder_data;
 
     for(idx = 0; idx < n_spindle; idx++) {
 
@@ -586,7 +584,7 @@ FLASHMEM static uint16_t spindle_get_ramp (spindle_ptrs_t *spindle, float rpm, f
     ramp->rpm_delta = target_rpm - rpm;
     ramp->delay = DWELL_TIME_STEP;
 
-    uint16_t dly = ((uint16_t)(float)delay_ms * fabsf(ramp->rpm_delta / spindle->rpm_max));
+    uint16_t dly = (uint16_t)((float)(uint16_t)delay_ms * fabsf(ramp->rpm_delta / spindle->rpm_max));
 
     ramp->rpm_delta /= (float)(dly / ramp->delay) + 1;
 
@@ -976,7 +974,7 @@ static uint_fast16_t spindle_compute_pwm_value (spindle_pwm_t *pwm_data, float r
 
         if(pwm_data->flags.laser_off_overdrive) {
             int32_t pwm_overdrive;
-            pwm_overdrive = (uint32_t)pwm_value + (uint32_t)((float)pwm_value * pwm_data->off_overdrive_pct) / 100.0f;
+            pwm_overdrive = (int32_t)((uint32_t)pwm_value + (uint32_t)((float)pwm_value * pwm_data->off_overdrive_pct) / 100.0f);
             pwm_data->pwm_overdrive = invert_pwm(pwm_data, constrain((uint_fast16_t)pwm_overdrive, pwm_data->min_value, pwm_data->max_value));
         }
 
@@ -1248,11 +1246,11 @@ FLASHMEM static bool has_ports (const setting_detail_t *setting, uint_fast16_t o
 }
 
 PROGMEM static const setting_detail_t spindle1_settings[] = {
-    { Setting_Spindle_OnPort, Group_AuxPorts, "PWM2 spindle on port", NULL, Format_Decimal, "-#0", "0", max_dport, Setting_NonCoreFn, set_port, get_port, has_ports, { .reboot_required = On } },
-    { Setting_Spindle_DirPort, Group_AuxPorts, "PWM2 spindle direction port", NULL, Format_Decimal, "-#0", "-1", max_dport, Setting_NonCoreFn, set_port, get_port, has_ports, { .reboot_required = On } },
-    { Setting_SpindleInvertMask1, Group_Spindle, "PWM2 spindle signals invert", NULL, Format_Bitfield, spindle_signals, NULL, NULL, Setting_IsExtendedFn, set_spindle_invert, get_int, NULL, { .reboot_required = On } },
-    { Setting_Spindle_PWMPort, Group_AuxPorts, "PWM2 spindle PWM port", NULL, Format_Decimal, "-#0", "0", max_aport, Setting_NonCoreFn, set_port, get_port, has_ports, { .reboot_required = On } },
-    { Setting_SpindlePWMOptions1, Group_Spindle, "PWM2 spindle options", NULL, Format_XBitfield, "Enable,RPM controls spindle enable signal,Disable laser mode capability,Enable ramping" PWM_SPINDLE_NO_DELAYS, NULL, NULL, Setting_IsExtendedFn, set_pwm_options, get_int, has_pwm },
+    { Setting_Spindle_OnPort, Group_AuxPorts, "PWM2 spindle on port", NULL, Format_Decimal, "-#0", "0", max_dport, Setting_NonCoreFn, (void *)set_port, (void *)get_port, has_ports, { .reboot_required = On } },
+    { Setting_Spindle_DirPort, Group_AuxPorts, "PWM2 spindle direction port", NULL, Format_Decimal, "-#0", "-1", max_dport, Setting_NonCoreFn, (void *)set_port, (void *)get_port, has_ports, { .reboot_required = On } },
+    { Setting_SpindleInvertMask1, Group_Spindle, "PWM2 spindle signals invert", NULL, Format_Bitfield, spindle_signals, NULL, NULL, Setting_IsExtendedFn, (void *)set_spindle_invert, (void *)get_int, NULL, { .reboot_required = On } },
+    { Setting_Spindle_PWMPort, Group_AuxPorts, "PWM2 spindle PWM port", NULL, Format_Decimal, "-#0", "0", max_aport, Setting_NonCoreFn, (void *)set_port, (void *)get_port, has_ports, { .reboot_required = On } },
+    { Setting_SpindlePWMOptions1, Group_Spindle, "PWM2 spindle options", NULL, Format_XBitfield, "Enable,RPM controls spindle enable signal,Disable laser mode capability,Enable ramping" PWM_SPINDLE_NO_DELAYS, NULL, NULL, Setting_IsExtendedFn, (void *)set_pwm_options, (void *)get_int, has_pwm },
     { Setting_RpmMax1, Group_Spindle, "PWM2 spindle max speed", "RPM", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacy, &sp1_settings.cfg.rpm_max, NULL, has_pwm },
     { Setting_RpmMin1, Group_Spindle, "PWM2 spindle min speed", "RPM", Format_Decimal, "#####0.000", NULL, NULL, Setting_IsLegacy, &sp1_settings.cfg.rpm_min, NULL, has_pwm },
     { Setting_PWMFreq1, Group_Spindle, "PWM2 spindle PWM frequency", "Hz", Format_Decimal, "#####0", NULL, NULL, Setting_IsExtended, &sp1_settings.cfg.pwm_freq, NULL, has_freq },
@@ -1260,15 +1258,15 @@ PROGMEM static const setting_detail_t spindle1_settings[] = {
     { Setting_PWMMinValue1, Group_Spindle, "PWM2 spindle PWM min value", "percent", Format_Decimal, "##0.0", NULL, "100", Setting_IsExtended, &sp1_settings.cfg.pwm_min_value, NULL, has_pwm },
     { Setting_PWMMaxValue1, Group_Spindle, "PWM2 spindle PWM max value", "percent", Format_Decimal, "##0.0", NULL, "100", Setting_IsExtended, &sp1_settings.cfg.pwm_max_value, NULL, has_pwm }
 #if xENABLE_SPINDLE_LINEARIZATION
-     { Setting_LinearSpindle1Piece1, Group_Spindle, "PWM2 spindle linearisation, 1st point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, set_linear_piece, get_linear_piece, NULL },
+     { Setting_LinearSpindle1Piece1, Group_Spindle, "PWM2 spindle linearisation, 1st point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, (void *)set_linear_piece, (void *)get_linear_piece, NULL },
   #if SPINDLE_NPWM_PIECES > 1
-     { Setting_LinearSpindle1Piece2, Group_Spindle, "PWM2 spindle linearisation, 2nd point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, set_linear_piece, get_linear_piece, NULL },
+     { Setting_LinearSpindle1Piece2, Group_Spindle, "PWM2 spindle linearisation, 2nd point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, (void *)set_linear_piece, (void *)get_linear_piece, NULL },
   #endif
   #if SPINDLE_NPWM_PIECES > 2
-     { Setting_LinearSpindle1Piece3, Group_Spindle, "PWM2 spindle linearisation, 3rd point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, set_linear_piece, get_linear_piece, NULL },
+     { Setting_LinearSpindle1Piece3, Group_Spindle, "PWM2 spindle linearisation, 3rd point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, (void *)set_linear_piece, (void *)get_linear_piece, NULL },
   #endif
   #if SPINDLE_NPWM_PIECES > 3
-     { Setting_LinearSpindle1Piece4, Group_Spindle, "PWM2 spindle linearisation, 4th point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, set_linear_piece, get_linear_piece, NULL },
+     { Setting_LinearSpindle1Piece4, Group_Spindle, "PWM2 spindle linearisation, 4th point", NULL, Format_String, "x(39)", NULL, "39", Setting_IsExtendedFn, (void *)set_linear_piece, (void *)get_linear_piece, NULL },
   #endif
 #endif
 };

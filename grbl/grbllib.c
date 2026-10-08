@@ -68,7 +68,7 @@ typedef struct core_task {
     uint32_t lock;
     foreground_task_ptr fn;
     void *data;
-    volatile struct core_task *next;
+    struct core_task * volatile next;
 } core_task_t;
 
 DCRAM system_t sys; //!< System global variable structure.
@@ -78,12 +78,12 @@ DCRAM grbl_hal_t hal;
 static driver_startup_t driver = { .ok = 0xFF };
 static stepper_enable_ptr stepper_enable;
 DCRAM static struct {
-    volatile core_task_t *immediate;     //!< Pointer to first entry of linked list of tasks to run immediately.
-    volatile core_task_t *delayed;       //!< Pointer to first entry of linked list of delayed tasks to run, in execution order.
-    volatile core_task_t *systick;       //!< Pointer to first entry of linked list of systick (1 ms) tasks to run.
-    volatile core_task_t *on_booted;     //!< Pointer to first entry of linked list of tasks to run once on cold boot.
-    volatile core_task_t *on_reset;      //!< Pointer to first entry of linked list of tasks to on soft reset.
-    volatile core_task_t *last_freed;    //!< Pointer to last freed task.
+    core_task_t * volatile immediate;     //!< Pointer to first entry of linked list of tasks to run immediately.
+    core_task_t * volatile delayed;       //!< Pointer to first entry of linked list of delayed tasks to run, in execution order.
+    core_task_t * volatile systick;       //!< Pointer to first entry of linked list of systick (1 ms) tasks to run.
+    core_task_t * volatile on_booted;     //!< Pointer to first entry of linked list of tasks to run once on cold boot.
+    core_task_t * volatile on_reset;      //!< Pointer to first entry of linked list of tasks to on soft reset.
+    core_task_t * volatile last_freed;    //!< Pointer to last freed task.
     core_task_t pool[CORE_TASK_POOL_SIZE];
 } tasks;
 #ifdef KINEMATICS_API
@@ -877,5 +877,5 @@ FLASHMEM void task_execute_on_startup (void)
 
 FLASHMEM void task_raise_alarm (void *data)
 {
-    system_raise_alarm((alarm_code_t)data);
+    system_raise_alarm((alarm_code_t)(uintptr_t)data);
 }

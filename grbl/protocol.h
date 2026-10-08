@@ -39,7 +39,7 @@
 typedef union {
     foreground_task_ptr fn;
     on_execute_realtime_ptr fn_deprecated;
-} fg_task_ptr __attribute__ ((__transparent_union__));
+} fg_task_ptr;
 
 // Starts grblHAL main loop. It handles all incoming characters from the input stream and executes
 // them as they complete. It is also responsible for finishing the initialization procedures.

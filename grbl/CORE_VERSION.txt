@@ -1,1 +1,22 @@
 c3a887e3e366f91e26813bb6072479d719cac83a Sun Oct 4 18:47:47 2026 +0200
+
+Local changes for the IAR C/C++ Compiler for ARM (EWARM 9.x), which has no
+GCC transparent unions, rejects some implicit conversions and lacks POSIX
+parts of the C library. The GCC build behaves the same with them.
+
+- crossbar.h, ioports.h: xbar_cfg_ptr_t and driver_caps_t are void pointers
+  instead of transparent unions; ioports.c casts driver_caps_t.
+- spindle_control.h, protocol.h: transparent_union attribute removed
+  (spindle_context_ptr_t is only a struct member, fg_task_ptr is unused).
+- settings.c, ioports.c, spindle_control.c, canbus.c, modbus_rtu.c: set /
+  get handler functions in the setting tables cast to (void *).
+- grbllib.c: the task list links are volatile pointers to tasks instead of
+  pointers to volatile tasks (no qualifier is discarded any more).
+- vfs.h: <time.h> for IAR; POSIX errno codes defined when missing.
+- nuts_bolts.h, strutils.c/.h: ffs() and strlcpy() for IAR.
+- Warnings: explicit casts for enum / int and float / int / double
+  conversions, no initializers that a switch jumps over, unused variables
+  and an unused function removed.
+- Fixes: gcode.c G5.1 checked I twice instead of I and J; protocol.c passed
+  an alarm code as message code (Message_MotorFault); stepper2.c didn't
+  chain grbl.on_reset.
