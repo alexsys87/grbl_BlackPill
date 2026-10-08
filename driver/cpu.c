@@ -1,12 +1,13 @@
 /*
-  cpu.c - clock setup and fault handling for STM32F401, register level.
+  cpu.c - clock setup and fault handling for STM32F401 / STM32F411,
+          register level.
 
   Part of grbl_BlackPill (grblHAL driver, register level, IAR EWARM).
   Taken over from Teacup_Firmware_iar (hal/cpu.c).
 
-  Sets up the PLL from the board crystal (HSE_CLOCK_HZ) to run at 84 MHz
-  with a 48 MHz USB clock, with automatic fallback to the internal 16 MHz
-  oscillator. Also starts the DWT cycle counter (delays, microsecond time
+  Sets up the PLL from the board crystal (HSE_CLOCK_HZ) to run at F_CPU
+  (84 MHz F401, 96 MHz F411) with a 48 MHz USB clock, with automatic
+  fallback to the internal 16 MHz oscillator. Also starts the DWT cycle counter (delays, microsecond time
   base), sets the interrupt priority grouping and enables the FPU lazy
   stacking.
 
@@ -20,10 +21,18 @@
 
 cpu_clock_t cpu_clock_source = CpuClock_Failed;
 
-/* PLL: VCO input is always 1 MHz, VCO = 336 MHz, SYSCLK = VCO / 4 = 84 MHz,
-   USB = VCO / 7 = 48 MHz. */
-#define PLL_P       4
-#define PLL_Q       7
+/* PLL: VCO input is always 1 MHz.
+   F401: VCO = 336 MHz, SYSCLK = VCO / 4 = 84 MHz, USB = VCO / 7 = 48 MHz.
+   F411: VCO = 192 MHz, SYSCLK = VCO / 2 = 96 MHz, USB = VCO / 4 = 48 MHz. */
+#if F_CPU == 84000000UL
+  #define PLL_P     4
+  #define PLL_Q     7
+#elif F_CPU == 96000000UL
+  #define PLL_P     2
+  #define PLL_Q     4
+#else
+  #error F_CPU must be 84 or 96 MHz (48 MHz USB clock).
+#endif
 #define PLL_VCO_MHZ ((F_CPU / 1000000UL) * PLL_P)
 
 #if (HSE_CLOCK_HZ % 1000000UL) != 0 || HSE_CLOCK_HZ < 4000000UL || HSE_CLOCK_HZ > 26000000UL
@@ -36,12 +45,13 @@ cpu_clock_t cpu_clock_source = CpuClock_Failed;
           (src) | \
           ((uint32_t)PLL_Q << RCC_PLLCFGR_PLLQ_Pos))
 
-/* Flash wait states for 2.7..3.6 V supply, RM0368 table 6: 84 MHz -> 2. */
+/* Flash wait states for 2.7..3.6 V supply (RM0368 table 6, RM0383 table 5):
+   84 MHz -> 2, 96 MHz -> 3. */
 #define FLASH_WS    ((F_CPU - 1) / 30000000UL)
 
 /// RTC backup register 0 value asking for the bootloader.
 #define BOOTLOADER_MAGIC  0xDF00B007UL
-/// STM32F401 system memory: bootloader vector table.
+/// STM32F401 / F411 system memory: bootloader vector table.
 #define SYSMEM_BASE       0x1FFF0000UL
 
 /** Wait for a flag with timeout. \return true if the flag came up. */
@@ -101,10 +111,15 @@ void cpu_init (void)
     RCC->CR &= ~RCC_CR_PLLON;
     wait_flag(&RCC->CR, RCC_CR_PLLRDY, 0, 100000);
 
-    // Regulator voltage scale 2 (up to 84 MHz).
+    // Regulator voltage scale: F401 scale 2 (up to 84 MHz), F411 scale 1
+    // (up to 100 MHz, VOS = 0b11).
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
     (void)RCC->APB1ENR;
+#if defined(STM32F411xE)
+    PWR->CR = (PWR->CR & ~PWR_CR_VOS) | PWR_CR_VOS_1 | PWR_CR_VOS_0;
+#else
     PWR->CR = (PWR->CR & ~PWR_CR_VOS) | PWR_CR_VOS_1;
+#endif
 
     // Crystal, with fallback to the internal RC oscillator.
     RCC->CR |= RCC_CR_HSEON;
@@ -125,7 +140,7 @@ void cpu_init (void)
                      (FLASH_WS << FLASH_ACR_LATENCY_Pos);
         wait_flag(&FLASH->ACR, FLASH_ACR_LATENCY, FLASH_WS << FLASH_ACR_LATENCY_Pos, 100000);
 
-        // AHB = 84 MHz, APB1 = 42 MHz (max), APB2 = 84 MHz.
+        // AHB = F_CPU, APB1 = F_CPU / 2 (42 / 48 MHz, max 42 / 50), APB2 = F_CPU.
         RCC->CFGR = (RCC->CFGR & ~(RCC_CFGR_HPRE | RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2))
                     | RCC_CFGR_HPRE_DIV1 | RCC_CFGR_PPRE1_DIV2 | RCC_CFGR_PPRE2_DIV1;
         RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW) | RCC_CFGR_SW_PLL;

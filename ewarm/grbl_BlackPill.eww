@@ -6,5 +6,8 @@
     <project>
         <path>$WS_DIR$\grbl_STM32F401CE.ewp</path>
     </project>
+    <project>
+        <path>$WS_DIR$\grbl_STM32F411CE.ewp</path>
+    </project>
     <batchBuild />
 </workspace>
