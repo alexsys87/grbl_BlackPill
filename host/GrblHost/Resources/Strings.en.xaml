@@ -324,5 +324,10 @@ Is the probe connected and X/Y/Z zeroed on the stock? Travel at Z {1}, probing d
     <sys:String x:Key="S.JogContinuousTip">The machine moves while the button or key is held and stops on release. With soft limits ($20=1) set $40=1 so the jog is clipped to them</sys:String>
     <sys:String x:Key="S.KeyboardJog">Keyboard</sys:String>
     <sys:String x:Key="S.KeyboardJogTip">Arrows: X/Y, Page Up/Down: Z; keypad: 4 6 8 2 X/Y, 9 3 Z, 7 1 diagonals, + − the step, 5 or Esc stop</sys:String>
+    <sys:String x:Key="S.GamepadJog">Gamepad</sys:String>
+    <sys:String x:Key="S.GamepadJogTip">Xbox-compatible gamepads (XInput) and generic USB joysticks while the window is active. Left stick or D-pad: X/Y, right stick up/down: Z, LB/RB: the step, B: stop. With LT held: A goes to zero X Y, X zeroes X Y here, Y zeroes Z here, Start homes ($H). Step or continuous follows the &quot;Continuous&quot; box</sys:String>
+    <sys:String x:Key="S.Pad.Off">Gamepad: off</sys:String>
+    <sys:String x:Key="S.Pad.None">Gamepad: not found</sys:String>
+    <sys:String x:Key="S.Pad.Connected">Gamepad: {0}</sys:String>
     <sys:String x:Key="S.SpindleApplyTip">Set the speed of the running spindle (S)</sys:String>
 </ResourceDictionary>

@@ -89,6 +89,7 @@ public sealed partial class MainViewModel
 
     private void OnStatus(MachineSnapshot s)
     {
+        _statusSeq++;
         _stateDetail = s.State switch
         {
             MachineState.Hold => s.SubState == 0 ? Loc.T("S.Machine.HoldDone") : Loc.T("S.Machine.Holding"),

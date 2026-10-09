@@ -324,5 +324,10 @@
     <sys:String x:Key="S.JogContinuousTip">Станок едет, пока кнопка или клавиша нажата, и останавливается при отпускании. С программными пределами ($20=1) включите $40=1, чтобы перемещение обрезалось по ним</sys:String>
     <sys:String x:Key="S.KeyboardJog">С клавиатуры</sys:String>
     <sys:String x:Key="S.KeyboardJogTip">Стрелки — X/Y, Page Up/Down — Z; цифровой блок: 4 6 8 2 — X/Y, 9 3 — Z, 7 1 — диагонали, + − — шаг, 5 или Esc — стоп</sys:String>
+    <sys:String x:Key="S.GamepadJog">Геймпад</sys:String>
+    <sys:String x:Key="S.GamepadJogTip">Xbox-совместимые геймпады (XInput) и обычные USB-джойстики, пока окно активно. Левый стик или крестовина — X/Y, правый стик вверх/вниз — Z, LB/RB — шаг, B — стоп. С зажатым LT: A — в ноль X Y, X — ноль X Y здесь, Y — ноль Z здесь, Start — поиск нуля ($H). Шаг или непрерывно — по флажку «Непрерывно»</sys:String>
+    <sys:String x:Key="S.Pad.Off">Геймпад: выключен</sys:String>
+    <sys:String x:Key="S.Pad.None">Геймпад: не найден</sys:String>
+    <sys:String x:Key="S.Pad.Connected">Геймпад: {0}</sys:String>
     <sys:String x:Key="S.SpindleApplyTip">Задать обороты работающему шпинделю (S)</sys:String>
 </ResourceDictionary>

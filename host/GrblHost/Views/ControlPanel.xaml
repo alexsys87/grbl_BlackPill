@@ -165,8 +165,11 @@
                         <CheckBox Content="{DynamicResource S.JogContinuous}" IsChecked="{Binding JogContinuous}" MinWidth="0"
                                   Margin="0,0,12,0" ToolTip="{DynamicResource S.JogContinuousTip}" />
                         <CheckBox Content="{DynamicResource S.KeyboardJog}" IsChecked="{Binding KeyboardJog}" MinWidth="0"
-                                  ToolTip="{DynamicResource S.KeyboardJogTip}" />
+                                  Margin="0,0,12,0" ToolTip="{DynamicResource S.KeyboardJogTip}" />
+                        <CheckBox Content="{DynamicResource S.GamepadJog}" IsChecked="{Binding GamepadJog}" MinWidth="0"
+                                  ToolTip="{DynamicResource S.GamepadJogTip}" />
                     </WrapPanel>
+                    <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0" Text="{Binding GamepadStatus}" />
                     <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{DynamicResource S.JogHint}" />
 
                     <WrapPanel Margin="0,8,0,0">

@@ -339,6 +339,11 @@ S = [
 ("JogContinuousTip", "Станок едет, пока кнопка или клавиша нажата, и останавливается при отпускании. С программными пределами ($20=1) включите $40=1, чтобы перемещение обрезалось по ним", "The machine moves while the button or key is held and stops on release. With soft limits ($20=1) set $40=1 so the jog is clipped to them"),
 ("KeyboardJog", "С клавиатуры", "Keyboard"),
 ("KeyboardJogTip", "Стрелки — X/Y, Page Up/Down — Z; цифровой блок: 4 6 8 2 — X/Y, 9 3 — Z, 7 1 — диагонали, + − — шаг, 5 или Esc — стоп", "Arrows: X/Y, Page Up/Down: Z; keypad: 4 6 8 2 X/Y, 9 3 Z, 7 1 diagonals, + − the step, 5 or Esc stop"),
+("GamepadJog", "Геймпад", "Gamepad"),
+("GamepadJogTip", "Xbox-совместимые геймпады (XInput) и обычные USB-джойстики, пока окно активно. Левый стик или крестовина — X/Y, правый стик вверх/вниз — Z, LB/RB — шаг, B — стоп. С зажатым LT: A — в ноль X Y, X — ноль X Y здесь, Y — ноль Z здесь, Start — поиск нуля ($H). Шаг или непрерывно — по флажку «Непрерывно»", "Xbox-compatible gamepads (XInput) and generic USB joysticks while the window is active. Left stick or D-pad: X/Y, right stick up/down: Z, LB/RB: the step, B: stop. With LT held: A goes to zero X Y, X zeroes X Y here, Y zeroes Z here, Start homes ($H). Step or continuous follows the \"Continuous\" box"),
+("Pad.Off", "Геймпад: выключен", "Gamepad: off"),
+("Pad.None", "Геймпад: не найден", "Gamepad: not found"),
+("Pad.Connected", "Геймпад: {0}", "Gamepad: {0}"),
 ("SpindleApplyTip", "Задать обороты работающему шпинделю (S)", "Set the speed of the running spindle (S)"),
 ]
 

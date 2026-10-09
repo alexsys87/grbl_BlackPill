@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using GrblHost.Services;
 using GrblHost.ViewModels;
 
 namespace GrblHost;
@@ -11,6 +12,7 @@ namespace GrblHost;
 public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 {
     private readonly MainViewModel _vm;
+    private readonly GamepadController _gamepad;
 
     public MainWindow(MainViewModel vm)
     {
@@ -23,6 +25,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         PreviewKeyUp += OnPreviewKeyUp;
         // A continuous jog must not run on when the keys go to another window.
         Deactivated += (_, _) => _vm.JogStop();
+        // Gamepad or joystick jog (setting "Gamepad" in the Axes tab).
+        _gamepad = new GamepadController(vm, this);
     }
 
     /// <summary>Keys typed into a text field are not jog keys.</summary>
@@ -65,6 +69,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             e.Cancel = true;
             return;
         }
+        _gamepad.Dispose();
         _vm.SaveSettings();
         _vm.Dispose();
         base.OnClosing(e);

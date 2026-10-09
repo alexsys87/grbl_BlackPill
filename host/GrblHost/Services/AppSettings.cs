@@ -52,6 +52,8 @@ public sealed class AppSettings
 
     /// <summary>Jog with the keyboard (arrows, Page Up / Down, numeric keypad).</summary>
     public bool KeyboardJog { get; set; }
+    /// <summary>Jog with a gamepad or joystick while the window is active.</summary>
+    public bool GamepadJog { get; set; }
     /// <summary>Jog while a button or key is held instead of by steps.</summary>
     public bool JogContinuous { get; set; }
 
