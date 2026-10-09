@@ -1,4 +1,5 @@
 using GrblHost.Core.Input;
+using GrblHost.Core.Machine;
 using GrblHost.Services;
 
 namespace GrblHost.ViewModels;
