@@ -129,6 +129,13 @@ public sealed class GrblConnection : IDisposable
     private readonly Queue<Entry> _pending = new();
     private int _inflightChars;
     private int _rxBufferSize = 128;          // Classic grbl until [OPT:] says more.
+    private int _plannerBlocks;               // From [OPT:], 0 while unknown.
+
+    // Jog lines. The controller throws away what it has not read yet when it gets a jog cancel
+    // and answers none of it, so a jog line is never sent together with other lines (the lines
+    // that are not answered must be known), and the lines of a cancelled jog are forgotten.
+    private double _lastJogWrite = -10;       // When the last jog line went out.
+    private double _guardUntil;               // No sending until then (the answer of a dropped line may still come).
 
     // Job.
     private IReadOnlyList<JobLine>? _job;
@@ -160,6 +167,7 @@ public sealed class GrblConnection : IDisposable
         public SendKind Kind { get; }
         public int JobIndex { get; }
         public int Length => Text.Length + 1;
+        public double SentAt { get; set; }
     }
 
     public GrblConnection()
@@ -225,6 +233,12 @@ public sealed class GrblConnection : IDisposable
     public int RxBufferSize
     {
         get { lock (_sync) return _rxBufferSize; }
+    }
+
+    /// <summary>Planner blocks of the controller, from "[OPT:...,blocks,rx]"; 0 while unknown.</summary>
+    public int PlannerBlocks
+    {
+        get { lock (_sync) return _plannerBlocks; }
     }
 
     /// <summary>"1.1f.20261004:CNC3018 BlackPill" from [VER:].</summary>
@@ -333,6 +347,8 @@ public sealed class GrblConnection : IDisposable
         _inflight.Clear();
         _pending.Clear();
         _inflightChars = 0;
+        _guardUntil = 0;
+        _lastJogWrite = -10;
         _resetWhenHeldSince = -1;
         _expectWelcomeUntil = -1;
     }
@@ -472,7 +488,60 @@ public sealed class GrblConnection : IDisposable
     /// <summary>Jog: "$J=" + G-code words, e.g. "G91 G21 X10 F1000".</summary>
     public void Jog(string words) => Send("$J=" + words, SendKind.Jog);
 
-    public void JogCancel() => WriteRaw(RealtimeCommand.JogCancel);
+    /// <summary>A jog line is allowed this long to show up as the Jog state in a status report.</summary>
+    private const double JogStatusLagSeconds = 1.5;
+
+    /// <summary>After a jog cancel nothing is sent for this long, so the answer to a dropped line can't be mistaken for another one.</summary>
+    private const double JogGuardSeconds = 0.06;
+
+    /// <summary>
+    /// Stop the jog at once (0x85). The controller also throws away the input it has not read, and
+    /// that must not happen outside a jog: during a job it would take lines out of the program. So
+    /// the byte is only sent while a jog may be running (state Jog, a jog line on its way, or one
+    /// sent a moment ago) and never during a job. The jog lines the controller drops are forgotten,
+    /// they get no answer.
+    /// </summary>
+    public void JogCancel()
+    {
+        bool send;
+        lock (_sync)
+        {
+            send = _job == null && _transport != null &&
+                   (_snapshot.State == MachineState.Jog || HasJogLine() || Now - _lastJogWrite < JogStatusLagSeconds);
+            if (send)
+            {
+                DropJogLines();
+                _guardUntil = Now + JogGuardSeconds;
+            }
+        }
+        if (send)
+            WriteRaw(RealtimeCommand.JogCancel);
+    }
+
+    private bool HasJogLine() => _pending.Any(e => e.Kind == SendKind.Jog) || _inflight.Any(e => e.Kind == SendKind.Jog);
+
+    /// <summary>Forget the jog lines that wait to be sent or to be answered.</summary>
+    private void DropJogLines()
+    {
+        if (_pending.Any(e => e.Kind == SendKind.Jog))
+        {
+            var keep = _pending.Where(e => e.Kind != SendKind.Jog).ToList();
+            _pending.Clear();
+            foreach (var e in keep)
+                _pending.Enqueue(e);
+        }
+        if (_inflight.Any(e => e.Kind == SendKind.Jog))
+        {
+            var keep = _inflight.Where(e => e.Kind != SendKind.Jog).ToList();
+            _inflight.Clear();
+            _inflightChars = 0;
+            foreach (var e in keep)
+            {
+                _inflight.Enqueue(e);
+                _inflightChars += e.Length;
+            }
+        }
+    }
 
     public void FeedHold() => WriteRaw(RealtimeCommand.FeedHold);
 
@@ -543,7 +612,7 @@ public sealed class GrblConnection : IDisposable
                 if (_pending.Count > 0)
                 {
                     var p = _pending.Peek();
-                    if (Fits(p))
+                    if (CanSend(p))
                         e = _pending.Dequeue();
                     else
                         break;
@@ -551,13 +620,16 @@ public sealed class GrblConnection : IDisposable
                 else if (_job != null && _jobStreaming && _jobNext < _job.Count && _state == ConnectionState.Online)
                 {
                     var j = new Entry(_job[_jobNext].Command, SendKind.Job, _jobNext);
-                    if (!Fits(j))
+                    if (!CanSend(j))
                         break;
                     _jobNext++;
                     e = j;
                 }
                 if (e == null)
                     break;
+                e.SentAt = Now;
+                if (e.Kind == SendKind.Jog)
+                    _lastJogWrite = e.SentAt;
                 _inflight.Enqueue(e);
                 _inflightChars += e.Length;
                 sent.Add(e);
@@ -572,6 +644,18 @@ public sealed class GrblConnection : IDisposable
 
     // A line longer than the whole buffer still goes out alone.
     private bool Fits(Entry e) => _inflightChars + e.Length <= _rxBufferSize - 1 || _inflight.Count == 0;
+
+    /// <summary>Called with the lock held.</summary>
+    private bool CanSend(Entry e)
+    {
+        if (Now < _guardUntil)
+            return false;
+        // A jog line goes out alone, and nothing follows it until the controller has answered it.
+        bool jogInFlight = _inflight.Count > 0 && _inflight.Peek().Kind == SendKind.Jog;
+        if (e.Kind == SendKind.Jog)
+            return _inflight.Count == 0;
+        return !jogInFlight && Fits(e);
+    }
 
     private void WriteRaw(byte value)
     {
@@ -728,6 +812,9 @@ public sealed class GrblConnection : IDisposable
             if (p.Length >= 3 && int.TryParse(p[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out int rx) && rx >= 64)
                 lock (_sync)
                     _rxBufferSize = rx;
+            if (p.Length >= 2 && int.TryParse(p[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int blocks) && blocks > 0)
+                lock (_sync)
+                    _plannerBlocks = blocks;
         }
         else if (line.Length > 2 && line[0] == '$' && char.IsDigit(line[1]))
         {
@@ -922,6 +1009,7 @@ public sealed class GrblConnection : IDisposable
                 case ConnectionState.Online:
                     if (now - lastReq >= StatusIntervalMs / 1000.0)
                         WriteRaw(RealtimeCommand.StatusReport);
+                    ServiceQueues(now);
                     if (now - lastRx > LinkTimeoutMs / 1000.0)
                         LinkLost(ConnectionMessage.LinkTimeout,
                             ((int)(now - lastRx)).ToString(CultureInfo.InvariantCulture));
@@ -942,6 +1030,29 @@ public sealed class GrblConnection : IDisposable
         {
             Interlocked.Exchange(ref _ticking, 0);
         }
+    }
+
+    /// <summary>
+    /// Lines held back by the guard after a jog cancel go out now. A jog line is answered within
+    /// milliseconds; one that is not has been dropped by the controller (a cancel we did not send,
+    /// a port change), and it must not block the lines behind it for ever.
+    /// </summary>
+    private void ServiceQueues(double now)
+    {
+        bool pump = false;
+        lock (_sync)
+        {
+            if (_inflight.Count > 0 && _inflight.Peek().Kind == SendKind.Jog && now - _inflight.Peek().SentAt > 2.0)
+            {
+                var jog = _inflight.Dequeue();
+                _inflightChars -= jog.Length;
+                pump = true;
+            }
+            if (_pending.Count > 0 && now >= _guardUntil)
+                pump = true;
+        }
+        if (pump)
+            Pump();
     }
 
     public void Dispose()

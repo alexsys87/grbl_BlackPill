@@ -90,6 +90,7 @@ public sealed partial class MainViewModel
     private void OnStatus(MachineSnapshot s)
     {
         _statusSeq++;
+        TrackJog(s);
         _stateDetail = s.State switch
         {
             MachineState.Hold => s.SubState == 0 ? Loc.T("S.Machine.HoldDone") : Loc.T("S.Machine.Holding"),
@@ -286,6 +287,36 @@ public sealed partial class MainViewModel
         return true;
     }
 
+    // ---------------------------------------------------------------- jog safety
+
+    /// <summary>
+    /// Step jogs on their way to the planner or in it. Every click is a move, and the controller
+    /// accepts them all: ten fast clicks are ten moves that only the stop button can cancel. More
+    /// than this many and the click is ignored.
+    /// </summary>
+    private const int MaxQueuedJogSteps = 3;
+
+    private int _stepsSinceStatus;      // Step jogs sent since the last status report.
+    private int _plannerUsed;           // Planner blocks in use at the last status report.
+    private int _plannerFreeMax;
+    private readonly JogWatchdog _jogWatchdog = new();
+
+    /// <summary>Called with every status report.</summary>
+    private void TrackJog(MachineSnapshot s)
+    {
+        _stepsSinceStatus = 0;
+        _plannerUsed = 0;
+        if (s.PlannerKnown)
+        {
+            _plannerFreeMax = Math.Max(_plannerFreeMax, s.PlannerFree);
+            int blocks = _conn.PlannerBlocks > 0 ? _conn.PlannerBlocks : _plannerFreeMax;
+            _plannerUsed = Math.Max(0, blocks - s.PlannerFree);
+        }
+        // The machine jogs, the setting is "continuous" and nobody holds the jog: stop it.
+        if (_jogWatchdog.Update(Environment.TickCount64, s.State == MachineState.Jog, _continuousJog != null, JogContinuous))
+            _conn.JogCancel();
+    }
+
     /// <summary>"X+", "Y-", "Z+", "XY++" (diagonal) … by the step, or by the distance per axis.</summary>
     private void JogBy(string what, Func<char, double>? distance)
     {
@@ -303,6 +334,13 @@ public sealed partial class MainViewModel
             double d = distance?.Invoke(axes[i]) ?? JogStep;
             words.Add(axes[i] + N(signs[i] == '-' ? -d : d));
             z |= axes[i] == 'Z';
+        }
+        if (distance == null)
+        {
+            // One step: clicks must not pile up in the planner, the machine would run on long after the last one.
+            if (_plannerUsed + _stepsSinceStatus >= MaxQueuedJogSteps)
+                return;
+            _stepsSinceStatus++;
         }
         double feed = z ? JogFeedZ : JogFeedXY;
         _conn.Jog("G91 G21 " + string.Join(' ', words) + " F" + N(feed));

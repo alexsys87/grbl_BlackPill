@@ -249,6 +249,8 @@ public sealed class MachineSnapshot
     public string Pins { get; set; } = "";
     public string Accessories { get; set; } = "";
     public int PlannerFree { get; set; }
+    /// <summary>The status reports carry the planner level ("Bf:"); PlannerFree means nothing before that.</summary>
+    public bool PlannerKnown { get; set; }
     public int RxFree { get; set; }
     public int LineNumber { get; set; } = -1;
 
@@ -286,7 +288,10 @@ public sealed class MachineSnapshot
         }
         Pins = s.Pins ?? "";
         if (s.PlannerFree is { } pf)
+        {
             PlannerFree = pf;
+            PlannerKnown = true;
+        }
         if (s.RxFree is { } rf)
             RxFree = rf;
         if (s.LineNumber is { } ln)
