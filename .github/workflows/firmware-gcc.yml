@@ -1,0 +1,55 @@
+name: Firmware GCC (Ubuntu)
+
+on:
+  push:
+    paths:
+      - 'Makefile'
+      - 'gcc/**'
+      - 'cmsis/**'
+      - 'driver/**'
+      - 'grbl/**'
+      - 'tools/check_firmware.py'
+      - '.github/workflows/firmware-gcc.yml'
+  pull_request:
+    paths:
+      - 'Makefile'
+      - 'gcc/**'
+      - 'cmsis/**'
+      - 'driver/**'
+      - 'grbl/**'
+      - 'tools/check_firmware.py'
+      - '.github/workflows/firmware-gcc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        chip: [F401C, F401E, F411E]
+        config: [Release, Debug]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ARM GCC and newlib
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends make gcc-arm-none-eabi libnewlib-arm-none-eabi python3
+          arm-none-eabi-gcc --version
+      - name: Build hardware firmware and verify memory layout
+        run: make -j2 CHIP=${{ matrix.chip }} CONFIG=${{ matrix.config }}
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: grbl-${{ matrix.chip }}-${{ matrix.config }}-gcc
+          path: |
+            build/gcc/${{ matrix.chip }}/${{ matrix.config }}/usb/grbl.elf
+            build/gcc/${{ matrix.chip }}/${{ matrix.config }}/usb/grbl.bin
+            build/gcc/${{ matrix.chip }}/${{ matrix.config }}/usb/grbl.hex
+            build/gcc/${{ matrix.chip }}/${{ matrix.config }}/usb/grbl.map
+            build/gcc/${{ matrix.chip }}/${{ matrix.config }}/usb/build-options.txt
+          if-no-files-found: error

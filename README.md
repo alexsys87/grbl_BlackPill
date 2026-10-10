@@ -4,7 +4,7 @@
 CNC 3018 на плате **WeAct Studio BlackPill STM32F401CCU6 / STM32F401CEU6 /
 STM32F411CEU6**. Распиновка у всех трёх одинаковая.
 Драйвер платы написан **только на регистрах и CMSIS** (без HAL / LL / Cube),
-проект — для **IAR Embedded Workbench for ARM**. За основу взяты структура,
+проект поддерживает **IAR Embedded Workbench for ARM** и **ARM GCC на Ubuntu / WSL**. За основу взяты структура,
 CMSIS, тактирование, USB CDC и проект IAR из
 [Teacup_Firmware_iar](https://github.com/alexsys87/Teacup_Firmware_iar);
 ядро grblHAL взято из upstream с небольшими правками для компилятора IAR
@@ -161,9 +161,56 @@ IAR (`tools/ewarm_template.ewp/.ewd`). После добавления или у
 
 Отладка — ST-Link (SWD: PA13 / PA14) прямо из IAR.
 
-## Сборка GCC (проверка и тесты)
+## Сборка прошивки GCC на Ubuntu / WSL
 
-Для проверки без IAR есть Makefile на `arm-none-eabi-gcc`:
+В Ubuntu 22.04/24.04 или Ubuntu внутри WSL установите инструменты:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y make gcc-arm-none-eabi libnewlib-arm-none-eabi python3
+```
+
+Из **корня репозитория**:
+
+```bash
+make -j"$(nproc)"                 # STM32F401CC, Release, USB CDC
+make -j"$(nproc)" CHIP=F401E      # STM32F401CE
+make -j"$(nproc)" CHIP=F411E      # STM32F411CE
+make -j"$(nproc)" CHIP=F401C CONFIG=Debug
+make -j"$(nproc)" all-chips       # Release для всех трёх плат
+make clean                       # удалить только build/gcc
+```
+
+Результат: `build/gcc/<CHIP>/<Release|Debug>/usb/grbl.elf`, `.hex`, `.bin`
+и `.map`. Выберите `CHIP` **по маркировке микроконтроллера**, не по цвету платы.
+Это рабочая прошивка для физической платы: USB CDC и оба UART включены по
+умолчанию, распиновка и настройки CNC 3018 — те же, что в IAR. IAR, Renode,
+Windows и .NET для этой сборки не нужны. Для основного порта USART1 вместо
+USB: `make CHIP=F401C USB_SERIAL_CDC=0`; результат будет в подкаталоге `uart`.
+Дополнительные определения: `make EXTRA="-DUART2_ENABLE=0"`.
+Для нестандартного пути компилятора: `make TOOLCHAIN_PREFIX=/opt/arm/bin/arm-none-eabi-`.
+
+Сборка сама проверяет адрес векторов, размеры памяти выбранного чипа,
+совпадение ELF/HEX/BIN и отсутствие данных HEX в секторе настроек
+`0x08004000…0x08007FFF`. Heap ограничен 12 КБ, для стека зарезервированы
+4 КБ, как в IAR; линкер не допускает их пересечения. В отчёте линкера RAM
+может показываться как 100%, поскольку стек закреплён у верхней границы RAM;
+реальные размеры секций видны в `.map` и выводе `arm-none-eabi-size`.
+
+**Для прошивки с сохранением настроек используйте `.hex` и не включайте
+полное стирание flash.** `.bin` содержит промежутки с заполнением `0xff`,
+включая сектор настроек; запись BIN через DFU может сбросить настройки.
+
+**Готовые прошивки:** Actions → **Firmware GCC (Ubuntu)** → успешный запуск →
+Artifacts → `grbl-<CHIP>-<Release|Debug>-gcc`. GitHub Actions устанавливает
+компилятор и собирает все три чипа в Release и Debug, без лицензии IAR.
+Проверка выполняется при изменениях исходников/сборки, в pull request и
+по ручному запуску. Проверки компиляции и расположения памяти не заменяют
+проверку на реальной плате; перед первым движением отключите силовые выходы.
+
+## Тестовая сборка GCC (Renode)
+
+Тестовый Makefile в `test/gcc` остаётся отдельно и не изменён:
 
 ```
 cd test/gcc
@@ -224,7 +271,8 @@ GRBL_CHIP=F411 GRBL_PORT=usb python3 test/renode/run_tests.py
 | `cmsis/` | CMSIS Core, файлы устройства STM32F401 / F411, startup и линкер-файлы IAR |
 | `ewarm/` | проекты IAR EWARM |
 | `tools/` | генератор проектов IAR |
-| `test/gcc/` | Makefile, startup и линкер-файл для GCC |
+| `Makefile`, `gcc/` | рабочая GCC-сборка прошивки для Ubuntu / WSL, startup и линкер |
+| `test/gcc/` | отдельная GCC-сборка для тестов Renode |
 | `test/renode/` | платформа и тесты Renode |
 | `host/` | программа управления станком Grbl Host (WPF, .NET 8) |
 

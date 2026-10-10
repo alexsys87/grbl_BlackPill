@@ -1,5 +1,7 @@
 # GCC cross-check builds
 test/gcc/build_*/
+# Production GCC firmware builds
+build/gcc/
 # IAR EWARM output and per-user files
 ewarm/Debug/
 ewarm/Release/
