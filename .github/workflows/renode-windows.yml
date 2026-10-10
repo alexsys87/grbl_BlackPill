@@ -1,0 +1,30 @@
+name: Renode Windows tests
+
+on:
+  push:
+    branches: [main]
+    paths: ['test/**', 'cmsis/**', 'driver/**', 'grbl/**', '.github/workflows/renode-windows.yml']
+  pull_request:
+    branches: [main]
+    paths: ['test/**', 'cmsis/**', 'driver/**', 'grbl/**', '.github/workflows/renode-windows.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  renode:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run bootstrap and all four firmware test configurations
+        shell: cmd
+        run: test\run-renode.cmd
+      - name: Upload logs and monitor scripts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Renode-Windows-logs
+          path: test/results/
+          if-no-files-found: warn
