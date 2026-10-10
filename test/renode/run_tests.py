@@ -15,7 +15,7 @@ Usage: run_tests.py [renode] [grbl.elf]
   GRBL_CHIP=F411 the STM32F411CE build (make CHIP=F411E) on a 96 MHz
                  platform, default is F401 (STM32F401CC).
 """
-import os, re, subprocess, sys
+import os, re, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PORT = os.environ.get('GRBL_PORT', 'uart')
@@ -43,13 +43,18 @@ def send2(text):                                                       # second 
     for ch in text:
         cmd('sysbus.usart2 WriteChar 0x%02X' % ord(ch))
 def pin(port, n, level): cmd('sysbus.gpioPort%s OnGPIO %d %s' % (port, n, 'true' if level else 'false'))
+def monitor_path(path):
+    # Quoted monitor strings accept Windows paths and spaces. A bare @path
+    # with backslashes/spaces is not portable across the two operating systems.
+    return '"%s"' % os.path.abspath(path).replace('\\', '/')
+
 def peek(tag, addr):
     cmd('echo "@@VAL %s"' % tag); cmd('sysbus ReadDoubleWord 0x%08X' % addr)
 
-cmd('include @%s' % os.path.join(HERE, 'models', 'TeacupSTM32_OTGFS.cs'))
+cmd('include %s' % monitor_path(os.path.join(HERE, 'models', 'TeacupSTM32_OTGFS.cs')))
 cmd('mach create "grbl"')
-cmd('machine LoadPlatformDescription @%s' % REPL)
-cmd('sysbus LoadELF @%s' % os.path.abspath(ELF))
+cmd('machine LoadPlatformDescription %s' % monitor_path(REPL))
+cmd('sysbus LoadELF %s' % monitor_path(ELF))
 cmd('showAnalyzer sysbus.%s Antmicro.Renode.Analyzers.LoggingUartAnalyzer' % HOSTDEV)
 cmd('logLevel 3')
 cmd('logLevel -1 sysbus.%s' % HOSTDEV)
@@ -189,15 +194,40 @@ mark('get110'); send('$110\n'); run('0.1')
 mark('end')
 cmd('quit')
 
-script = os.path.join('/tmp', 'grbl_test_%d.resc' % os.getpid())
-open(script, 'w').write('\n'.join(lines) + '\n')
+log_dir = os.path.abspath(os.environ.get('GRBL_LOG_DIR', tempfile.gettempdir()))
+os.makedirs(log_dir, exist_ok=True)
+with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.resc',
+                                 prefix='grbl_%s_%s_' % (CHIP, PORT),
+                                 dir=log_dir, delete=False) as script_file:
+    script_file.write('\n'.join(lines) + '\n')
+    script = script_file.name
+log_path = os.path.join(log_dir, 'grbl_test_%s_%s.log' % (CHIP, PORT))
+if not os.path.isfile(ELF):
+    print('Firmware ELF is missing: %s' % ELF, file=sys.stderr)
+    sys.exit(2)
 proc = subprocess.Popen([RENODE, '--console', '--disable-gui', script],
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT, text=True)
-out = proc.stdout.read()
-proc.wait()
+                        stderr=subprocess.STDOUT, text=True,
+                        encoding='utf-8', errors='replace')
+timed_out = False
+try:
+    out, _ = proc.communicate(timeout=int(os.environ.get('GRBL_TEST_TIMEOUT_SEC', '600')))
+except subprocess.TimeoutExpired:
+    timed_out = True
+    if os.name == 'nt':
+        subprocess.run(['taskkill', '/PID', str(proc.pid), '/T', '/F'],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        proc.kill()
+    out, _ = proc.communicate()
 out = re.sub(r'\x1b\[[0-9;]*m', '', out)
-open('/tmp/grbl_test_%s.log' % PORT, 'w').write(out)
+with open(log_path, 'w', encoding='utf-8') as log_file:
+    log_file.write(out)
+print('Renode log: %s' % log_path)
+print('Monitor script: %s' % script)
+if timed_out:
+    print('Renode exceeded GRBL_TEST_TIMEOUT_SEC; see the log.', file=sys.stderr)
+    sys.exit(2)
 
 # Split the log into sections by markers.
 sections, cur = {}, 'pre'
@@ -206,6 +236,12 @@ for l in out.splitlines():
     if m and 'echo' not in l:
         cur = m.group(1); sections[cur] = []; continue
     sections.setdefault(cur, []).append(l)
+
+if proc.returncode != 0 or 'end' not in sections:
+    print('Renode did not complete the monitor script (exit %s); see %s' %
+          (proc.returncode, log_path), file=sys.stderr)
+    print('\n'.join(out.splitlines()[-30:]), file=sys.stderr)
+    sys.exit(2)
 
 vals, tag = {}, None
 for l in out.splitlines():
