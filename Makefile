@@ -57,10 +57,12 @@ CPPFLAGS := -D$(DEVICE) -DUSB_SERIAL_CDC=$(USB_SERIAL_CDC) $(EXTRA) \
 CFLAGS := $(CPUFLAGS) -std=gnu11 -funsigned-char $(OPT) -g3 \
           -ffunction-sections -fdata-sections -Wall -Wno-unused-parameter \
           -Werror=implicit-function-declaration -MMD -MP
+# Optional grblHAL spindle linearization uses sscanf/snprintf with floats.
+# newlib-nano needs these entry points explicitly enabled (also fits F401C).
 LDFLAGS := $(CPUFLAGS) $(OPT) -T gcc/stm32f4.ld \
            -Wl,--defsym=__flash_size=$(FLASH_SIZE),--defsym=__ram_size=$(RAM_SIZE) \
            -Wl,--gc-sections,--print-memory-usage,-Map=$(TARGET).map \
-           --specs=nano.specs --specs=nosys.specs
+           --specs=nano.specs --specs=nosys.specs -Wl,-u,_printf_float,-u,_scanf_float
 
 .PHONY: all check size all-chips clean help FORCE
 all: $(TARGET).elf $(TARGET).bin $(TARGET).hex check size
