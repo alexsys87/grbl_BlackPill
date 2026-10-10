@@ -1,0 +1,57 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <!-- Never change UpgradeCode: it identifies this product across releases. -->
+  <Package Name="Grbl Host" Manufacturer="alexsys87"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="6233C025-9CCC-4040-B926-FF9EE18A6BD6"
+           Scope="perMachine" InstallerVersion="500" Compressed="yes">
+    <MajorUpgrade Schedule="afterInstallInitialize"
+                  DowngradeErrorMessage="A newer version of GrblHost is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+    <Launch Condition="VersionNT64" Message="GrblHost requires 64-bit Windows." />
+
+    <!-- Advertised EXE shortcuts require a PE icon resource with an .exe name.
+         The published apphost contains the project's Assets/AppIcon.ico. -->
+    <Icon Id="GrblHost.exe" SourceFile="$(var.PublishDir)\GrblHost.exe" />
+    <Property Id="ARPPRODUCTICON" Value="GrblHost.exe" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/alexsys87/grbl_BlackPill" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="GrblHost is available in the Start menu." />
+    <!-- Preserve a custom installation directory during a major upgrade. -->
+    <Property Id="INSTALLFOLDER">
+      <RegistrySearch Id="PreviousInstallFolder" Root="HKLM"
+                      Key="Software\alexsys87\GrblHost"
+                      Name="InstallDir" Type="raw" Bitness="always64" />
+    </Property>
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="GrblHost">
+        <Component Id="MainExecutable" Guid="*" Bitness="always64">
+          <File Id="GrblHostExe" Source="$(var.PublishDir)\GrblHost.exe" KeyPath="yes">
+            <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder"
+                      Name="Grbl Host" WorkingDirectory="INSTALLFOLDER"
+                      Advertise="yes" Icon="GrblHost.exe" IconIndex="0" />
+          </File>
+        </Component>
+        <Component Id="InstallLocation" Guid="38169963-45B6-418B-B930-807363507457" Bitness="always64">
+          <RegistryValue Root="HKLM" Key="Software\alexsys87\GrblHost"
+                         Name="InstallDir" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <Feature Id="Complete" Title="Grbl Host" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="InstallLocation" />
+      <ComponentGroupRef Id="PublishedFiles" />
+    </Feature>
+    <!-- Minimal UI with a directory chooser, no fabricated license agreement. -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <UI>
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog"
+               Value="InstallDirDlg" Order="2" Condition="NOT Installed" />
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog"
+               Value="WelcomeDlg" Order="2" Condition="1" />
+    </UI>
+  </Package>
+</Wix>
