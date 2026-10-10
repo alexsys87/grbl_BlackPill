@@ -12,3 +12,6 @@ host/**/obj/
 host/.vs/
 *.user
 __pycache__/
+
+# Published host application, MSI and installer diagnostics
+artifacts/
