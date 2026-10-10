@@ -136,6 +136,7 @@ try {
                 # compiler warnings must not bypass the explicit exit-code check.
                 $ErrorActionPreference = 'Continue'
                 & $make 'SHELL=sh.exe' "CHIP=$selectedChip" "TEST=$mode" '-B' "-j$Jobs" 2>&1 |
+                    ForEach-Object { $_.ToString() } |
                     Tee-Object -FilePath (Join-Path $caseDir 'build.log')
                 $buildExit = $LASTEXITCODE
             } finally {
@@ -154,6 +155,7 @@ try {
             try {
                 $ErrorActionPreference = 'Continue'
                 & $python (Join-Path $PSScriptRoot 'renode\run_tests.py') $renode $elf 2>&1 |
+                    ForEach-Object { $_.ToString() } |
                     Tee-Object -FilePath (Join-Path $caseDir 'checks.log')
                 $testExit = $LASTEXITCODE
             } finally { $ErrorActionPreference = 'Stop' }
