@@ -27,9 +27,9 @@ jobs:
       REQUESTED_VERSION: ${{ inputs.version }}
       MSI_RUN_NUMBER: ${{ github.run_number }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
       - name: Choose installer version
@@ -62,7 +62,7 @@ jobs:
         run: |
           ./installer/test-msi.ps1 -Msi "artifacts/msi/GrblHost-$env:PRODUCT_VERSION-win-x64.msi" -BaselineMsi artifacts/upgrade-baseline/GrblHost-0.0.0-win-x64.msi -AllowMachineChanges
       - name: Upload installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: GrblHost-${{ steps.version.outputs.value }}-win-x64-msi
           path: |
@@ -71,7 +71,7 @@ jobs:
           if-no-files-found: error
       - name: Upload diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: GrblHost-msi-diagnostics
           path: |
